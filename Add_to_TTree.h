@@ -10,3 +10,16 @@ float get_y(float Pt1, float Eta1, float Phi1, float M1, float Pt2, float Eta2, 
 
     return LvecSum.Rapidity();
 }
+
+float get_m(float Pt1, float Eta1, float Phi1, float M1, float Pt2, float Eta2, float Phi2, float M2) {
+    auto Lvec1 = get_lvec(Pt1, Eta1, Phi1, M1);
+    auto Lvec2 = get_lvec(Pt2, Eta2, Phi2, M2);
+    auto LvecSum = Lvec1 + Lvec2;
+
+    return LvecSum.M();
+}
+
+float get_omega(float y1, float y2) {
+    return TMath::Abs(TMath::TanH( (y1-y2)/2 ));
+}
+
