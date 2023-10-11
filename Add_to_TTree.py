@@ -13,32 +13,80 @@ LvecJ2 = LvecJ1.replace("jet1", "jet2")
 LvecJ3 = LvecJ1.replace("jet1", "jet3")
 LvecJ4 = LvecJ1.replace("jet1", "jet4")
 
+SaveList = ["Mass", "fourjetmasstev",
+
+        "Mjj_msortedP1_high_div4jm", "Mjj_msortedP1_low_div4jm",
+        "Mjj_msortedP2_high_div4jm", "Mjj_msortedP2_low_div4jm",
+        "Mjj_msortedP3_high_div4jm", "Mjj_msortedP3_low_div4jm",
+
+        "P1_Mhigh_TeV", "P1_Mlow_TeV",
+        "P2_Mhigh_TeV", "P2_Mlow_TeV",
+        "P3_Mhigh_TeV", "P3_Mlow_TeV",
+
+        "P1_omega", "P2_omega", "P3_omega",
+        "P1_x", "P2_x", "P3_x",
+
+        "Mjj_avg_dRpairing_GeV", "evt_trig",
+
+        "P1high_j1", "P1high_j2", "P1low_j1", "P1low_j2",
+        "P2high_j1", "P2high_j2", "P2low_j1", "P2low_j2",
+        "P3high_j1", "P3high_j2", "P3low_j1", "P3low_j2",
+]
+
 for Mass in MassList:
     RootFile = "tree_ML_MCRun2_" + str(Mass) + "GeV.root"
     print "processing ", RootFile
     RDF = ROOT.RDataFrame("tree_ML", InputDir + RootFile)
 
     RDF = RDF.Define("Mass", str(Mass))
-    RDF = RDF.Define("y12", "get_y(" + LvecJ1 + ", " + LvecJ2 + ")")
-    RDF = RDF.Define("y34", "get_y(" + LvecJ3 + ", " + LvecJ4 + ")")
-    RDF = RDF.Define("y13", "get_y(" + LvecJ1 + ", " + LvecJ3 + ")")
-    RDF = RDF.Define("y24", "get_y(" + LvecJ2 + ", " + LvecJ4 + ")")
-    RDF = RDF.Define("y14", "get_y(" + LvecJ1 + ", " + LvecJ4 + ")")
-    RDF = RDF.Define("y23", "get_y(" + LvecJ2 + ", " + LvecJ3 + ")")
 
-    RDF = RDF.Define("omega1", "get_omega(y12, y34)")
-    RDF = RDF.Define("omega2", "get_omega(y13, y24)")
-    RDF = RDF.Define("omega3", "get_omega(y14, y23)")
+    RDF = RDF.Define("P1_Mhigh_TeV", "Mjj_msortedP1_high / 1000")
+    RDF = RDF.Define("P1_Mlow_TeV", "Mjj_msortedP1_low / 1000")
+    RDF = RDF.Define("P2_Mhigh_TeV", "Mjj_msortedP2_high / 1000")
+    RDF = RDF.Define("P2_Mlow_TeV", "Mjj_msortedP2_low / 1000")
+    RDF = RDF.Define("P3_Mhigh_TeV", "Mjj_msortedP3_high / 1000")
+    RDF = RDF.Define("P3_Mlow_TeV", "Mjj_msortedP3_low / 1000")
 
-    RDF = RDF.Define("m12", "get_m(" + LvecJ1 + ", " + LvecJ2 + ")")
-    RDF = RDF.Define("m34", "get_m(" + LvecJ3 + ", " + LvecJ4 + ")")
-    RDF = RDF.Define("m13", "get_m(" + LvecJ1 + ", " + LvecJ3 + ")")
-    RDF = RDF.Define("m24", "get_m(" + LvecJ2 + ", " + LvecJ4 + ")")
-    RDF = RDF.Define("m14", "get_m(" + LvecJ1 + ", " + LvecJ4 + ")")
-    RDF = RDF.Define("m23", "get_m(" + LvecJ2 + ", " + LvecJ3 + ")")
+    RDF = RDF.Define("Mjj_msortedP1_low_div4jm", "P1_Mlow_TeV / fourjetmasstev")
+    RDF = RDF.Define("Mjj_msortedP2_low_div4jm", "P2_Mlow_TeV / fourjetmasstev")
+    RDF = RDF.Define("Mjj_msortedP3_low_div4jm", "P3_Mlow_TeV / fourjetmasstev")
 
-    RDF = RDF.Define("x1", "-1 + (fourjetmasstev * 1000) / (m12 + m34)")
-    RDF = RDF.Define("x2", "-1 + (fourjetmasstev * 1000) / (m13 + m24)")
-    RDF = RDF.Define("x3", "-1 + (fourjetmasstev * 1000) / (m14 + m23)")
+    RDF = RDF.Define("j1lvec", "ROOT::Math::PtEtaPhiMVector(" + LvecJ1 + ")")
+    RDF = RDF.Define("j2lvec", "ROOT::Math::PtEtaPhiMVector(" + LvecJ2 + ")")
+    RDF = RDF.Define("j3lvec", "ROOT::Math::PtEtaPhiMVector(" + LvecJ3 + ")")
+    RDF = RDF.Define("j4lvec", "ROOT::Math::PtEtaPhiMVector(" + LvecJ4 + ")")
 
-    RDF.Snapshot("tree_ML", OutputDir + RootFile)
+    RDF = RDF.Define("SortedJets", "sort_dijet_mass(j1lvec, j2lvec, j3lvec, j4lvec)")
+
+    RDF = RDF.Define("P1high_j1", "SortedJets[0]")
+    RDF = RDF.Define("P1high_j2", "SortedJets[1]")
+    RDF = RDF.Define("P1low_j1", "SortedJets[2]")
+    RDF = RDF.Define("P1low_j2", "SortedJets[3]")
+    RDF = RDF.Define("P2high_j1", "SortedJets[4]")
+    RDF = RDF.Define("P2high_j2", "SortedJets[5]")
+    RDF = RDF.Define("P2low_j1", "SortedJets[6]")
+    RDF = RDF.Define("P2low_j2", "SortedJets[7]")
+    RDF = RDF.Define("P3high_j1", "SortedJets[8]")
+    RDF = RDF.Define("P3high_j2", "SortedJets[9]")
+    RDF = RDF.Define("P3low_j1", "SortedJets[10]")
+    RDF = RDF.Define("P3low_j2", "SortedJets[11]")
+
+    RDF = RDF.Define("P1high", "P1high_j1 + P1high_j2")
+    RDF = RDF.Define("P1low", "P1low_j1 + P1low_j2")
+    RDF = RDF.Define("P2high", "P2high_j1 + P2high_j2")
+    RDF = RDF.Define("P2low", "P2low_j1 + P2low_j2")
+    RDF = RDF.Define("P3high", "P3high_j1 + P3high_j2")
+    RDF = RDF.Define("P3low", "P3low_j1 + P3low_j2")
+
+    RDF = RDF.Define("P1_omega", "abs( tanh(  (P1high.Rapidity() - P1low.Rapidity())/2  ) )")
+    RDF = RDF.Define("P2_omega", "abs( tanh(  (P2high.Rapidity() - P2low.Rapidity())/2  ) )")
+    RDF = RDF.Define("P3_omega", "abs( tanh(  (P3high.Rapidity() - P3low.Rapidity())/2  ) )")
+
+    RDF = RDF.Define("P1_x", "-1 + fourjetmasstev / (P1_Mhigh_TeV + P1_Mlow_TeV)")
+    RDF = RDF.Define("P2_x", "-1 + fourjetmasstev / (P2_Mhigh_TeV + P2_Mlow_TeV)")
+    RDF = RDF.Define("P3_x", "-1 + fourjetmasstev / (P3_Mhigh_TeV + P3_Mlow_TeV)")
+
+    OutCols = ROOT.vector("string")()
+    for Col in SaveList: OutCols.push_back(Col)
+
+    RDF.Snapshot("tree_ML", OutputDir + RootFile, OutCols)
