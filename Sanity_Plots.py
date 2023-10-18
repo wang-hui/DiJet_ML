@@ -3,8 +3,8 @@ ROOT.ROOT.EnableImplicitMT()
 ROOT.gStyle.SetOptStat(0)
 ROOT.gROOT.SetBatch(1)
 
-MassList = [500]
-#MassList = [500, 600, 700, 800, 900, 1000, 1250, 1500, 1750, 2000, 2500, 3000]
+#MassList = [500]
+MassList = [500, 600, 700, 800, 900, 1000, 1250, 1500, 1750, 2000, 2500, 3000]
 InputDir = "ML_TTree/"
 ResultsDir = "results_temp/"
 

@@ -28,18 +28,28 @@ def evaluate_rdf (RDF, Name, Mass):
     EventsMatch = RDF_temp.Count().GetValue()
     ML_Accuracy = float(EventsMatch) / EventsTot
     
-    Truth_QSMD_M = RDF.Histo1D(ROOT.RDF.TH1DModel("Truth_QSMD_M", "Truth_QSMD_M", 100, Mass/4, Mass*2), "Truth_QSMD_M")
-    ML_pred_M = RDF.Histo1D(ROOT.RDF.TH1DModel("ML_pred_M", "ML_pred_M", 100, Mass/4, Mass*2), "ML_pred_M")
-    ML_pred_val = RDF.Histo1D(ROOT.RDF.TH1DModel("ML_pred_val", "ML_pred_val", 50, 0.3, 1.0), "ML_pred_val")
+    Truth_QSMD_M = RDF.Histo1D(ROOT.RDF.TH1DModel("Truth_QSMD_M", "Truth_QSMD_M", 100, Mass/4, Mass*2 + 0.1),
+                    "Truth_QSMD_M", "weight")
+    ML_pred_M = RDF.Histo1D(ROOT.RDF.TH1DModel("ML_pred_M", "ML_pred_M", 100, Mass/4, Mass*2 + 0.1),
+                    "ML_pred_M", "weight")
+    ML_pred_val = RDF.Histo1D(ROOT.RDF.TH1DModel("ML_pred_val", "ML_pred_val", 50, 0.3, 1.0),
+                    "ML_pred_val", "weight")
+    fourjetmasstev = RDF.Histo1D(ROOT.RDF.TH1DModel("fourjetmasstev", "fourjetmasstev", 100, 0.0, 5.0),
+                    "fourjetmasstev", "weight")
     
     MyCanvas = ROOT.TCanvas("MyCanvas", "MyCanvas", 600, 600)
     MyCanvas.SetLeftMargin(0.15)
     MyCanvas.SetRightMargin(0.15)
         
     Truth_QSMD_M.Draw()
-    Truth_QSMD_M.SetTitle("Gen mass " + str(Mass) + "GeV")
+    Truth_QSMD_M.SetTitle("QCD")
     Truth_QSMD_M.GetXaxis().SetTitle("Average dijet mass [GeV]")
-    Mu, Sigma = fit_gaus(Truth_QSMD_M)
+
+    Mu = 0.0
+    Sigma = 0.0
+    if Mass > 0:
+        Mu, Sigma = fit_gaus(Truth_QSMD_M)
+        Truth_QSMD_M.SetTitle("Gen mass " + str(Mass) + "GeV")
     Truth_QSMD_M_3Sigma = Truth_QSMD_M.Integral(Truth_QSMD_M.FindBin(Mu-3*Sigma), Truth_QSMD_M.FindBin(Mu+3*Sigma))
     
     ML_pred_M.Draw("same")
@@ -56,6 +66,9 @@ def evaluate_rdf (RDF, Name, Mass):
 
     ML_pred_val.Draw()
     MyCanvas.SaveAs("results_temp/ML_pred_val_" + Name + "_" + str(Mass) + "GeV.png")
+
+    fourjetmasstev.Draw()
+    MyCanvas.SaveAs("results_temp/fourjetmasstev_" + Name + "_" + str(Mass) + "GeV.png")
     
     return ML_Accuracy, Truth_Efficiency, ML_Efficiency
 
@@ -67,30 +80,34 @@ def evaluate_rdf (RDF, Name, Mass):
 #        "ML_pred_Phigh_lvec", "ML_pred_Plow_lvec"
 #]
 
-#MassList = [500]
-MassList = [500, 600, 700, 800, 900, 1000, 1250, 1500, 1750, 2000, 2500, 3000]
+#InputList = [500]
+#InputList = [500, 600, 700, 800, 900, 1000, 1250, 1500, 1750, 2000, 2500, 3000]
+InputList = ["QCD_1M_stride70"]
+
+Nbins = len(InputList)
 InputDir = "ML_TTree/"
 
-ML_Accuracy_Trig = ROOT.TH1F("ML_Accuracy_Trig", "ML_Accuracy_Trig",
-        len(MassList) + 1, 0.5, len(MassList) + 1.5)
-Truth_Efficiency_Trig = ROOT.TH1F("Truth_Efficiency_Trig", "Truth_Efficiency_Trig",
-        len(MassList) + 1, 0.5, len(MassList) + 1.5)
-ML_Efficiency_Trig = ROOT.TH1F("ML_Efficiency_Trig", "ML_Efficiency_Trig",
-        len(MassList) + 1, 0.5, len(MassList) + 1.5)
-ML_Accuracy_Masym = ROOT.TH1F("ML_Accuracy_Masym", "ML_Accuracy_Masym",
-        len(MassList) + 1, 0.5, len(MassList) + 1.5)
-Truth_Efficiency_Masym = ROOT.TH1F("Truth_Efficiency_Masym", "Truth_Efficiency_Masym",
-        len(MassList) + 1, 0.5, len(MassList) + 1.5)
-ML_Efficiency_Masym = ROOT.TH1F("ML_Efficiency_Masym", "ML_Efficiency_Masym",
-        len(MassList) + 1, 0.5, len(MassList) + 1.5)
+ML_Accuracy_Trig = ROOT.TH1F("ML_Accuracy_Trig", "ML_Accuracy_Trig", Nbins, 0.5, Nbins + 0.5)
+Truth_Efficiency_Trig = ROOT.TH1F("Truth_Efficiency_Trig", "Truth_Efficiency_Trig", Nbins, 0.5, Nbins + 0.5)
+ML_Efficiency_Trig = ROOT.TH1F("ML_Efficiency_Trig", "ML_Efficiency_Trig", Nbins, 0.5, Nbins + 0.5)
+ML_Accuracy_Masym = ROOT.TH1F("ML_Accuracy_Masym", "ML_Accuracy_Masym", Nbins, 0.5, Nbins + 0.5)
+Truth_Efficiency_Masym = ROOT.TH1F("Truth_Efficiency_Masym", "Truth_Efficiency_Masym", Nbins, 0.5, Nbins + 0.5)
+ML_Efficiency_Masym = ROOT.TH1F("ML_Efficiency_Masym", "ML_Efficiency_Masym", Nbins, 0.5, Nbins + 0.5)
 
-for Idx, Mass in enumerate(MassList):
-    RootFile = "tree_ML_MCRun2_" + str(Mass) + "GeV.root"
+for Idx, Input in enumerate(InputList):
+    Mass = Input
+    FileName = "tree_ML_MCRun2_"
+    if isinstance(Input, str):
+        FileName = FileName + Input  + ".root"
+        Mass = 0
+    else:
+        FileName = FileName + str(Input) + "GeV.root"
+
     print ("=============================================")
-    print ("processing " + RootFile)
-    MainFile = ROOT.TFile.Open(InputDir + RootFile)
+    print ("processing " + FileName)
+    MainFile = ROOT.TFile.Open(InputDir + FileName)
     MainTree = MainFile.Get("tree_ML")
-    MLFile = ROOT.TFile.Open(InputDir + RootFile.replace("GeV.root", "GeV_ML.root"))
+    MLFile = ROOT.TFile.Open(InputDir + FileName.replace(".root", "_ML.root"))
     MLTree = MLFile.Get("tree_ML")
     MainTree.AddFriend(MLTree)
     

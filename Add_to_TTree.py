@@ -2,8 +2,9 @@ import ROOT
 ROOT.ROOT.EnableImplicitMT()
 ROOT.gInterpreter.Declare('#include "Add_to_TTree.h"')
 
-#MassList = [500]
-MassList = [500, 600, 700, 800, 900, 1000, 1250, 1500, 1750, 2000, 2500, 3000]
+#InputList = [500]
+#InputList = [500, 600, 700, 800, 900, 1000, 1250, 1500, 1750, 2000, 2500, 3000]
+InputList = ["QCD_1M_stride70"]
 
 InputDir = "/eos/uscms/store/user/huiwang/Dijet/ML_TTree/"
 OutputDir = "ML_TTree/"
@@ -13,7 +14,7 @@ LvecJ2 = LvecJ1.replace("jet1", "jet2")
 LvecJ3 = LvecJ1.replace("jet1", "jet3")
 LvecJ4 = LvecJ1.replace("jet1", "jet4")
 
-SaveList = ["Mass", "fourjetmasstev",
+SaveList = ["Mass", "weight", "fourjetmasstev",
 
         "Mjj_msortedP1_high_div4jm", "Mjj_msortedP1_low_div4jm",
         "Mjj_msortedP2_high_div4jm", "Mjj_msortedP2_low_div4jm",
@@ -33,12 +34,21 @@ SaveList = ["Mass", "fourjetmasstev",
         "P3high_j1", "P3high_j2", "P3low_j1", "P3low_j2",
 ]
 
-for Mass in MassList:
-    RootFile = "tree_ML_MCRun2_" + str(Mass) + "GeV.root"
-    print "processing ", RootFile
-    RDF = ROOT.RDataFrame("tree_ML", InputDir + RootFile)
+for Input in InputList:
+    FileName = "tree_ML_MCRun2_"
+    if isinstance(Input, str):
+        FileName = FileName + Input  + ".root"
+    else:
+        FileName = FileName + str(Input) + "GeV.root"
 
-    RDF = RDF.Define("Mass", str(Mass))
+    print "processing ", FileName
+    RDF = ROOT.RDataFrame("tree_ML", InputDir + FileName)
+
+    if isinstance(Input, str):
+        RDF = RDF.Define("Mass", str(0))
+    else:
+        RDF = RDF.Define("Mass", str(Input))
+        RDF = RDF.Define("weight", str(1))
 
     RDF = RDF.Define("P1_Mhigh_TeV", "Mjj_msortedP1_high / 1000")
     RDF = RDF.Define("P1_Mlow_TeV", "Mjj_msortedP1_low / 1000")
@@ -89,4 +99,4 @@ for Mass in MassList:
     OutCols = ROOT.vector("string")()
     for Col in SaveList: OutCols.push_back(Col)
 
-    RDF.Snapshot("tree_ML", OutputDir + RootFile, OutCols)
+    RDF.Snapshot("tree_ML", OutputDir + FileName, OutCols)
