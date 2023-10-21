@@ -3,8 +3,10 @@ ROOT.ROOT.EnableImplicitMT()
 ROOT.gStyle.SetOptStat(0)
 ROOT.gROOT.SetBatch(1)
 
-#MassList = [500]
-MassList = [500, 600, 700, 800, 900, 1000, 1250, 1500, 1750, 2000, 2500, 3000]
+#InputList = [500]
+#InputList = [500, 600, 700, 800, 900, 1000, 1250, 1500, 1750, 2000, 2500, 3000]
+InputList = ["QCD_1M_stride70"]
+
 InputDir = "ML_TTree/"
 ResultsDir = "results_temp/"
 
@@ -30,28 +32,42 @@ Plow_rho = PlotCfg("low_rho_high", "", 100, 0, 1, "low_rho_low", "", 100, 0, 1, 
 x_vs_Phigh_rho  = PlotCfg("high_rho", "", 100, 0, 1, "_x", "", 100, 0, 1.6, CfgList)
 x_vs_Plow_rho  = PlotCfg("low_rho", "", 100, 0, 1, "_x", "", 100, 0, 1.6, CfgList)
 
-Trig = ""
-Trig = "PassTrig"
+Cuts = ""
+#Cuts = "Trig"
+#Cuts = "Masym"
 
 MyChain = ROOT.TChain("tree_ML")
-for Mass in MassList:
-    FileName = "tree_ML_MCRun2_" + str(Mass) + "GeV.root"
+for Input in InputList:
+    FileName = "tree_ML_MCRun2_"
+    if isinstance(Input, str):
+        FileName = FileName + Input  + ".root"
+    else:
+        FileName = FileName + str(Input) + "GeV.root"
     MyChain.Add(InputDir + FileName)
 
 RDF = ROOT.RDataFrame(MyChain)
-if Trig != "": RDF = RDF.Filter("evt_trig == 1")
+if "Trig" in Cuts: RDF = RDF.Filter("evt_trig == 1")
 
-if len(MassList) > 1 : MassList += [-1]
-for Mass in MassList:
-    print "processing", str(Mass), "GeV"
+if len(InputList) > 1 : InputList += [-1]
+for Input in InputList:
+    print "processing", Input
     RDFTemp = RDF
+    Mass = Input
     Title = "Gen mass all"
-    if Mass != -1:
+    if isinstance(Input, str):
+        Mass = 0
+        Title = "QCD"
+    elif Mass != -1:
         RDFTemp = RDFTemp.Filter("Mass == " + str(Mass))
         Title = Title.replace("all", str(Mass) + " GeV")
 
-    for P in range(3):
-        Pair = "P" + str(P+1)
+    for Pair in ["P1", "P2", "P3"]:
+        RDFPassCuts = RDFTemp
+        if "Masym" in Cuts:
+            RDFPassCuts = RDFPassCuts.Filter("abs(" + Pair + "high_MTeV - " + Pair + "low_MTeV) / (" +
+                            Pair + "high_MTeV + " + Pair + "low_MTeV) < 0.1", "cut_Masym")
+        #CutReport = RDFPassCuts.Report()
+        #CutReport.Print()
 
         MyCanvas = ROOT.TCanvas("MyCanvas", "MyCanvas", 600, 600)
         MyCanvas.SetLeftMargin(0.15)
@@ -63,7 +79,7 @@ for Mass in MassList:
             Yval = Pair + Cfg.Yval
             H2dModel = ROOT.RDF.TH2DModel(Title, Title, Cfg.Xbins, Cfg.Xlow, Cfg.Xhigh,
                                                         Cfg.Ybins, Cfg.Ylow, Cfg.Yhigh)
-            H2d = RDFTemp.Histo2D(H2dModel, Xval, Yval)
+            H2d = RDFPassCuts.Histo2D(H2dModel, Xval, Yval, "weight")
             H2d.GetXaxis().SetTitle(Xval)
             H2d.GetYaxis().SetTitle(Yval)
     
@@ -73,4 +89,4 @@ for Mass in MassList:
             H2d.Draw("colz")
             H2dPfX.Draw("same")
     
-            MyCanvas.SaveAs(ResultsDir + Yval + "_vs_" + Xval + "_" + Trig + str(Mass) + "GeV.png")
+            MyCanvas.SaveAs(ResultsDir + Yval + "_vs_" + Xval + "_" + Cuts + "_" + str(Mass) + "GeV.png")

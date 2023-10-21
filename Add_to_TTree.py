@@ -3,8 +3,8 @@ ROOT.ROOT.EnableImplicitMT()
 ROOT.gInterpreter.Declare('#include "Add_to_TTree.h"')
 
 #InputList = [500]
-InputList = [500, 600, 700, 800, 900, 1000, 1250, 1500, 1750, 2000, 2500, 3000]
-#InputList = ["QCD_1M_stride70"]
+#InputList = [500, 600, 700, 800, 900, 1000, 1250, 1500, 1750, 2000, 2500, 3000]
+InputList = ["QCD_1M_stride70"]
 
 InputDir = "/eos/uscms/store/user/huiwang/Dijet/ML_TTree/"
 OutputDir = "ML_TTree/"
@@ -57,17 +57,7 @@ for Input in InputList:
         RDF = RDF.Define("Mass", str(Input))
         RDF = RDF.Define("weight", str(1))
 
-    RDF = RDF.Define("P1high_MTeV", "Mjj_msortedP1_high / 1000")
-    RDF = RDF.Define("P1low_MTeV", "Mjj_msortedP1_low / 1000")
-    RDF = RDF.Define("P2high_MTeV", "Mjj_msortedP2_high / 1000")
-    RDF = RDF.Define("P2low_MTeV", "Mjj_msortedP2_low / 1000")
-    RDF = RDF.Define("P3high_MTeV", "Mjj_msortedP3_high / 1000")
-    RDF = RDF.Define("P3low_MTeV", "Mjj_msortedP3_low / 1000")
-
-    RDF = RDF.Define("Mjj_msortedP1_low_div4jm", "P1low_MTeV / fourjetmasstev")
-    RDF = RDF.Define("Mjj_msortedP2_low_div4jm", "P2low_MTeV / fourjetmasstev")
-    RDF = RDF.Define("Mjj_msortedP3_low_div4jm", "P3low_MTeV / fourjetmasstev")
-
+    ### single jet lvec ###
     RDF = RDF.Define("j1lvec", "ROOT::Math::PtEtaPhiMVector(" + LvecJ1 + ")")
     RDF = RDF.Define("j2lvec", "ROOT::Math::PtEtaPhiMVector(" + LvecJ2 + ")")
     RDF = RDF.Define("j3lvec", "ROOT::Math::PtEtaPhiMVector(" + LvecJ3 + ")")
@@ -75,6 +65,7 @@ for Input in InputList:
 
     RDF = RDF.Define("SortedJets", "sort_dijet_mass(j1lvec, j2lvec, j3lvec, j4lvec)")
 
+    ### lvec of single jet in dijet ###
     RDF = RDF.Define("P1high_j1", "SortedJets[0]")
     RDF = RDF.Define("P1high_j2", "SortedJets[1]")
     RDF = RDF.Define("P1low_j1", "SortedJets[2]")
@@ -88,53 +79,37 @@ for Input in InputList:
     RDF = RDF.Define("P3low_j1", "SortedJets[10]")
     RDF = RDF.Define("P3low_j2", "SortedJets[11]")
 
-    RDF = RDF.Define("P1high", "P1high_j1 + P1high_j2")
-    RDF = RDF.Define("P1low", "P1low_j1 + P1low_j2")
-    RDF = RDF.Define("P2high", "P2high_j1 + P2high_j2")
-    RDF = RDF.Define("P2low", "P2low_j1 + P2low_j2")
-    RDF = RDF.Define("P3high", "P3high_j1 + P3high_j2")
-    RDF = RDF.Define("P3low", "P3low_j1 + P3low_j2")
+    for Pair in ["P1", "P2", "P3"]:
+        ### mass variables ###
+        RDF = RDF.Define(Pair + "high_MTeV", "Mjj_msorted" + Pair + "_high / 1000")
+        RDF = RDF.Define(Pair + "low_MTeV", "Mjj_msorted" + Pair + "_low / 1000")
+        RDF = RDF.Define("Mjj_msorted" + Pair + "_low_div4jm", Pair + "low_MTeV / fourjetmasstev")
 
-    RDF = RDF.Define("P1_omega", "abs( tanh(  (P1high.Rapidity() - P1low.Rapidity())/2  ) )")
-    RDF = RDF.Define("P2_omega", "abs( tanh(  (P2high.Rapidity() - P2low.Rapidity())/2  ) )")
-    RDF = RDF.Define("P3_omega", "abs( tanh(  (P3high.Rapidity() - P3low.Rapidity())/2  ) )")
+        ### dijet lvec ###
+        RDF = RDF.Define(Pair + "high", Pair + "high_j1 + " + Pair + "high_j2")
+        RDF = RDF.Define(Pair + "low", Pair + "low_j1 + " + Pair + "low_j2")
 
-    RDF = RDF.Define("P1_x", "-1 + fourjetmasstev / (P1high_MTeV + P1low_MTeV)")
-    RDF = RDF.Define("P2_x", "-1 + fourjetmasstev / (P2high_MTeV + P2low_MTeV)")
-    RDF = RDF.Define("P3_x", "-1 + fourjetmasstev / (P3high_MTeV + P3low_MTeV)")
+        ### production variables ###
+        RDF = RDF.Define(Pair + "_omega", "abs(tanh((" + Pair + "high.Rapidity() - " + Pair + "low.Rapidity())/2))")
+        RDF = RDF.Define(Pair + "_x", "-1 + fourjetmasstev / (" + Pair + "high_MTeV + " + Pair + "low_MTeV)")
 
-    RDF = RDF.Define("P1high_rho_j1", "abs(1 - 2 * TMath::Sq( (P1high + P1low_j1).M()/1000 / fourjetmasstev) )")
-    RDF = RDF.Define("P1high_rho_j2", "abs(1 - 2 * TMath::Sq( (P1high + P1low_j2).M()/1000 / fourjetmasstev) )")
-    RDF = RDF.Define("P1low_rho_j1", "abs(1 - 2 * TMath::Sq( (P1low + P1high_j1).M()/1000 / fourjetmasstev) )")
-    RDF = RDF.Define("P1low_rho_j2", "abs(1 - 2 * TMath::Sq( (P1low + P1high_j2).M()/1000 / fourjetmasstev) )")
-    RDF = RDF.Define("P2high_rho_j1", "abs(1 - 2 * TMath::Sq( (P2high + P2low_j1).M()/1000 / fourjetmasstev) )")
-    RDF = RDF.Define("P2high_rho_j2", "abs(1 - 2 * TMath::Sq( (P2high + P2low_j2).M()/1000 / fourjetmasstev) )")
-    RDF = RDF.Define("P2low_rho_j1", "abs(1 - 2 * TMath::Sq( (P2low + P2high_j1).M()/1000 / fourjetmasstev) )")
-    RDF = RDF.Define("P2low_rho_j2", "abs(1 - 2 * TMath::Sq( (P2low + P2high_j2).M()/1000 / fourjetmasstev) )")
-    RDF = RDF.Define("P3high_rho_j1", "abs(1 - 2 * TMath::Sq( (P3high + P3low_j1).M()/1000 / fourjetmasstev) )")
-    RDF = RDF.Define("P3high_rho_j2", "abs(1 - 2 * TMath::Sq( (P3high + P3low_j2).M()/1000 / fourjetmasstev) )")
-    RDF = RDF.Define("P3low_rho_j1", "abs(1 - 2 * TMath::Sq( (P3low + P3high_j1).M()/1000 / fourjetmasstev) )")
-    RDF = RDF.Define("P3low_rho_j2", "abs(1 - 2 * TMath::Sq( (P3low + P3high_j2).M()/1000 / fourjetmasstev) )")
+        ### decay variables ###
+        RDF = RDF.Define(Pair + "high_rho_j1", "abs(1 - 2 * TMath::Sq((" +
+                        Pair + "high + " + Pair + "low_j1).M()/1000 / fourjetmasstev))")
+        RDF = RDF.Define(Pair + "high_rho_j2", "abs(1 - 2 * TMath::Sq((" +
+                        Pair + "high + " + Pair + "low_j2).M()/1000 / fourjetmasstev))")
+        RDF = RDF.Define(Pair + "low_rho_j1", "abs(1 - 2 * TMath::Sq((" +
+                        Pair + "low + " + Pair + "high_j1).M()/1000 / fourjetmasstev))")
+        RDF = RDF.Define(Pair + "low_rho_j2", "abs(1 - 2 * TMath::Sq((" +
+                        Pair + "low + " + Pair + "high_j2).M()/1000 / fourjetmasstev))")
 
-    RDF = RDF.Define("P1high_rho_high", "TMath::Max(P1high_rho_j1, P1high_rho_j2)")
-    RDF = RDF.Define("P1high_rho_low", "TMath::Min(P1high_rho_j1, P1high_rho_j2)")
-    RDF = RDF.Define("P1low_rho_high", "TMath::Max(P1low_rho_j1, P1low_rho_j2)")
-    RDF = RDF.Define("P1low_rho_low", "TMath::Min(P1low_rho_j1, P1low_rho_j2)")
-    RDF = RDF.Define("P2high_rho_high", "TMath::Max(P2high_rho_j1, P2high_rho_j2)")
-    RDF = RDF.Define("P2high_rho_low", "TMath::Min(P2high_rho_j1, P2high_rho_j2)")
-    RDF = RDF.Define("P2low_rho_high", "TMath::Max(P2low_rho_j1, P2low_rho_j2)")
-    RDF = RDF.Define("P2low_rho_low", "TMath::Min(P2low_rho_j1, P2low_rho_j2)")
-    RDF = RDF.Define("P3high_rho_high", "TMath::Max(P3high_rho_j1, P3high_rho_j2)")
-    RDF = RDF.Define("P3high_rho_low", "TMath::Min(P3high_rho_j1, P3high_rho_j2)")
-    RDF = RDF.Define("P3low_rho_high", "TMath::Max(P3low_rho_j1, P3low_rho_j2)")
-    RDF = RDF.Define("P3low_rho_low", "TMath::Min(P3low_rho_j1, P3low_rho_j2)")
+        RDF = RDF.Define(Pair + "high_rho_high", "TMath::Max(" + Pair + "high_rho_j1, " + Pair + "high_rho_j2)")
+        RDF = RDF.Define(Pair + "high_rho_low", "TMath::Min(" + Pair + "high_rho_j1, " + Pair + "high_rho_j2)")
+        RDF = RDF.Define(Pair + "low_rho_high", "TMath::Max(" + Pair + "low_rho_j1, " + Pair + "low_rho_j2)")
+        RDF = RDF.Define(Pair + "low_rho_low", "TMath::Min(" + Pair + "low_rho_j1, " + Pair + "low_rho_j2)")
 
-    RDF = RDF.Define("P1high_rho", "(P1high_rho_j1 + P1high_rho_j2) / 2")
-    RDF = RDF.Define("P1low_rho", "(P1low_rho_j1 + P1low_rho_j2) / 2")
-    RDF = RDF.Define("P2high_rho", "(P2high_rho_j1 + P2high_rho_j2) / 2")
-    RDF = RDF.Define("P2low_rho", "(P2low_rho_j1 + P2low_rho_j2) / 2")
-    RDF = RDF.Define("P3high_rho", "(P3high_rho_j1 + P3high_rho_j2) / 2")
-    RDF = RDF.Define("P3low_rho", "(P3low_rho_j1 + P3low_rho_j2) / 2")
+        RDF = RDF.Define(Pair + "high_rho", "(" + Pair + "high_rho_j1 + " + Pair + "high_rho_j2) / 2")
+        RDF = RDF.Define(Pair + "low_rho", "(" + Pair + "low_rho_j1 + " + Pair + "low_rho_j2) / 2")
 
     OutCols = ROOT.vector("string")()
     for Col in SaveList: OutCols.push_back(Col)
