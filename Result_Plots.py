@@ -22,46 +22,56 @@ def fit_gaus (TH1):
     return Mu, Sigma
 
 def evaluate_rdf (RDF, Name, Mass):
-    RDF_temp = RDF.Filter("ML_pred == Truth_QSMD")
-    
-    EventsTot = RDF.Count().GetValue()
-    EventsMatch = RDF_temp.Count().GetValue()
-    ML_Accuracy = float(EventsMatch) / EventsTot
-    
-    Truth_QSMD_M = RDF.Histo1D(ROOT.RDF.TH1DModel("Truth_QSMD_M", "Truth_QSMD_M", 100, Mass/4, Mass*2 + 0.1),
+    ML_Accuracy = Truth_Efficiency = ML_Efficiency = 0
+    Xlow = 0
+    Xhigh = 2000
+    if Mass > 0:
+        Xlow = Mass/4
+        Xhigh = Mass*2
+
+    Truth_QSMD_M = RDF.Histo1D(ROOT.RDF.TH1DModel("Truth_QSMD_M", "Truth_QSMD_M", 100, Xlow, Xhigh),
                     "Truth_QSMD_M", "weight")
-    ML_pred_M = RDF.Histo1D(ROOT.RDF.TH1DModel("ML_pred_M", "ML_pred_M", 100, Mass/4, Mass*2 + 0.1),
+    ML_pred_M = RDF.Histo1D(ROOT.RDF.TH1DModel("ML_pred_M", "ML_pred_M", 100, Xlow, Xhigh),
                     "ML_pred_M", "weight")
     ML_pred_val = RDF.Histo1D(ROOT.RDF.TH1DModel("ML_pred_val", "ML_pred_val", 50, 0.3, 1.0),
                     "ML_pred_val", "weight")
     fourjetmasstev = RDF.Histo1D(ROOT.RDF.TH1DModel("fourjetmasstev", "fourjetmasstev", 100, 0.0, 5.0),
                     "fourjetmasstev", "weight")
-    
+
     MyCanvas = ROOT.TCanvas("MyCanvas", "MyCanvas", 600, 600)
     MyCanvas.SetLeftMargin(0.15)
-    MyCanvas.SetRightMargin(0.15)
-        
-    Truth_QSMD_M.Draw()
-    Truth_QSMD_M.SetTitle("QCD")
-    Truth_QSMD_M.GetXaxis().SetTitle("Average dijet mass [GeV]")
+    MyCanvas.SetRightMargin(0.1)
 
-    Mu = 0.0
-    Sigma = 0.0
+    ML_pred_M.Draw()
+    ML_pred_M.SetTitle("QCD")
+    ML_pred_M.GetXaxis().SetTitle("Average dijet mass [GeV]")
+    ML_pred_M.GetYaxis().SetTitle("Events")
+    ML_pred_M.SetLineColor(ROOT.kGreen+1)
+
+    MyLeg = ROOT.TLegend(0.6,0.7,0.9,0.9)
+    MyLeg.AddEntry(ML_pred_M.GetPtr(), "ML pred", "l")
+
     if Mass > 0:
-        Mu, Sigma = fit_gaus(Truth_QSMD_M)
-        Truth_QSMD_M.SetTitle("Gen mass " + str(Mass) + "GeV")
-    Truth_QSMD_M_3Sigma = Truth_QSMD_M.Integral(Truth_QSMD_M.FindBin(Mu-3*Sigma), Truth_QSMD_M.FindBin(Mu+3*Sigma))
-    
-    ML_pred_M.Draw("same")
-    ML_pred_M.SetLineColor(ROOT.kBlack)
-    ML_pred_M_3Sigma = ML_pred_M.Integral(ML_pred_M.FindBin(Mu-3*Sigma), ML_pred_M.FindBin(Mu+3*Sigma))
+        ML_pred_M.SetTitle("Gen mass " + str(Mass) + "GeV")
+        Truth_QSMD_M.Draw("same")
+        MyLeg.AddEntry(Truth_QSMD_M.GetPtr(), "truth", "l")
 
-    Truth_Efficiency = Truth_QSMD_M_3Sigma / EventsTot
-    ML_Efficiency = ML_pred_M_3Sigma /  EventsTot
+        EventsTot = RDF.Count().GetValue()
+        Mu, Sigma = fit_gaus(Truth_QSMD_M)
+        Truth_QSMD_M_3Sigma = Truth_QSMD_M.Integral(
+            Truth_QSMD_M.FindBin(Mu-3*Sigma), Truth_QSMD_M.FindBin(Mu+3*Sigma))
+        Truth_Efficiency = Truth_QSMD_M_3Sigma / EventsTot
+        ML_pred_M_3Sigma = ML_pred_M.Integral(ML_pred_M.FindBin(Mu-3*Sigma), ML_pred_M.FindBin(Mu+3*Sigma))
+        ML_Efficiency = ML_pred_M_3Sigma /  EventsTot
     
-    print ("ML accuracy: %.2f" %ML_Accuracy, "Truth efficiency: %.2f" %Truth_Efficiency,
-            "ML efficiency: %.2f" %ML_Efficiency)
+        RDF_temp = RDF.Filter("ML_pred == Truth_QSMD")
+        EventsMatch = RDF_temp.Count().GetValue()
+        ML_Accuracy = float(EventsMatch) / EventsTot
     
+        print ("ML accuracy: %.2f" %ML_Accuracy, "Truth efficiency: %.2f" %Truth_Efficiency,
+                "ML efficiency: %.2f" %ML_Efficiency)
+    
+    MyLeg.Draw()
     MyCanvas.SaveAs("results_temp/" + Name + "_" + str(Mass) + "GeV.png")
 
     ML_pred_val.Draw()
@@ -115,20 +125,20 @@ for Idx, Input in enumerate(InputList):
     
     RDF = RDF.Filter("evt_trig == 1", "cut_Trig")
     
-    RDF = RDF.Define("P1_Mhigh", "P1_Mhigh_TeV * 1000")
-    RDF = RDF.Define("P1_Mlow", "P1_Mlow_TeV * 1000")
-    RDF = RDF.Define("P2_Mhigh", "P2_Mhigh_TeV * 1000")
-    RDF = RDF.Define("P2_Mlow", "P2_Mlow_TeV * 1000")
-    RDF = RDF.Define("P3_Mhigh", "P3_Mhigh_TeV * 1000")
-    RDF = RDF.Define("P3_Mlow", "P3_Mlow_TeV * 1000")
+    RDF = RDF.Define("P1high_M", "P1high_MTeV * 1000")
+    RDF = RDF.Define("P1low_M", "P1low_MTeV * 1000")
+    RDF = RDF.Define("P2high_M", "P2high_MTeV * 1000")
+    RDF = RDF.Define("P2low_M", "P2low_MTeV * 1000")
+    RDF = RDF.Define("P3high_M", "P3high_MTeV * 1000")
+    RDF = RDF.Define("P3low_M", "P3low_MTeV * 1000")
     
-    RDF = RDF.Define("P1_M", "(P1_Mhigh + P1_Mlow)/2")
-    RDF = RDF.Define("P2_M", "(P2_Mhigh + P2_Mlow)/2")
-    RDF = RDF.Define("P3_M", "(P3_Mhigh + P3_Mlow)/2")
+    RDF = RDF.Define("P1_M", "(P1high_M + P1low_M)/2")
+    RDF = RDF.Define("P2_M", "(P2high_M + P2low_M)/2")
+    RDF = RDF.Define("P3_M", "(P3high_M + P3low_M)/2")
     
-    RDF = RDF.Define("P1_QSMD", "TMath::Sq(P1_Mhigh - Mass) + TMath::Sq(P1_Mlow - Mass)")
-    RDF = RDF.Define("P2_QSMD", "TMath::Sq(P2_Mhigh - Mass) + TMath::Sq(P2_Mlow - Mass)")
-    RDF = RDF.Define("P3_QSMD", "TMath::Sq(P3_Mhigh - Mass) + TMath::Sq(P3_Mlow - Mass)")
+    RDF = RDF.Define("P1_QSMD", "TMath::Sq(P1high_M - Mass) + TMath::Sq(P1low_M - Mass)")
+    RDF = RDF.Define("P2_QSMD", "TMath::Sq(P2high_M - Mass) + TMath::Sq(P2low_M - Mass)")
+    RDF = RDF.Define("P3_QSMD", "TMath::Sq(P3high_M - Mass) + TMath::Sq(P3low_M - Mass)")
     
     RDF = RDF.Define("Truth_QSMD", "min_index(P1_QSMD, P2_QSMD, P3_QSMD)")
     RDF = RDF.Define("ML_pred", "max_index_val(P1_ML, P2_ML, P3_ML).first")

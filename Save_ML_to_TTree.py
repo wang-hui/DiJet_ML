@@ -6,11 +6,11 @@ print("tensorflow version: ", tf.__version__)
 print("running on GPU: ", tf.test.is_built_with_cuda())
 
 #InputList = [500]
-#InputList = [500, 600, 700, 800, 900, 1000, 1250, 1500, 1750, 2000, 2500, 3000]
-InputList = ["QCD_1M_stride70"]
+InputList = [500, 600, 700, 800, 900, 1000, 1250, 1500, 1750, 2000, 2500, 3000]
+#InputList = ["QCD_1M_stride70"]
 
-InputNames = ["fourjetmasstev", "P1_Mhigh_TeV", "P1_Mlow_TeV", "P2_Mhigh_TeV", "P2_Mlow_TeV",
-              "P3_Mhigh_TeV", "P3_Mlow_TeV"]
+InputNames = ["fourjetmasstev", "P1high_MTeV", "P1low_MTeV", "P2high_MTeV", "P2low_MTeV",
+              "P3high_MTeV", "P3low_MTeV"]
 
 ModelDir = "results/results_quad_sum_mass_diff_DNN_Dropout_0p2/"
 
