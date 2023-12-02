@@ -2,10 +2,15 @@ import ROOT
 
 Dir = "/eos/uscms/store/user/huiwang/Dijet/ML_TTree/"
 InputName = "tree_ML_MCRun2_QCD.root"
+Stride = 10
+
 RDF = ROOT.RDataFrame("tree_ML", Dir + InputName)
 
-RDF = RDF.Range(0, 70000000, 70)
+TotEvents = RDF.Count().GetValue()
+print "TotEvents", TotEvents
+
+RDF = RDF.Range(0, TotEvents - 1, Stride)
 RDF = RDF.Filter("evt_trig == 1")
 
-OutputName = InputName.replace(".root", "_1M_stride70.root")
+OutputName = InputName.replace(".root", "_7M_stride10.root")
 RDF.Snapshot("tree_ML", Dir + OutputName)

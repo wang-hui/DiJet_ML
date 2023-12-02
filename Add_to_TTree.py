@@ -3,8 +3,8 @@ ROOT.ROOT.EnableImplicitMT()
 ROOT.gInterpreter.Declare('#include "Add_to_TTree.h"')
 
 #InputList = [500]
-#InputList = [500, 600, 700, 800, 900, 1000, 1250, 1500, 1750, 2000, 2500, 3000]
-InputList = ["QCD_1M_stride70"]
+InputList = [500, 600, 700, 800, 900, 1000, 1250, 1500, 1750, 2000, 2500, 3000]
+#InputList = ["QCD_1M_stride70"]
 
 InputDir = "/eos/uscms/store/user/huiwang/Dijet/ML_TTree/"
 OutputDir = "ML_TTree/"
@@ -24,6 +24,10 @@ SaveList = ["Mass", "weight", "evt_trig",
         "P1high_MTeV", "P1low_MTeV",
         "P2high_MTeV", "P2low_MTeV",
         "P3high_MTeV", "P3low_MTeV",
+
+        "P1high_dR", "P1low_dR",
+        "P2high_dR", "P2low_dR",
+        "P3high_dR", "P3low_dR",
 
         "P1high_j1", "P1high_j2", "P1low_j1", "P1low_j2",
         "P2high_j1", "P2high_j2", "P2low_j1", "P2low_j2",
@@ -84,6 +88,11 @@ for Input in InputList:
         RDF = RDF.Define(Pair + "high_MTeV", "Mjj_msorted" + Pair + "_high / 1000")
         RDF = RDF.Define(Pair + "low_MTeV", "Mjj_msorted" + Pair + "_low / 1000")
         RDF = RDF.Define("Mjj_msorted" + Pair + "_low_div4jm", Pair + "low_MTeV / fourjetmasstev")
+
+        RDF = RDF.Define(Pair + "high_dR", "ROOT::Math::VectorUtil::DeltaR(" +
+                        Pair + "high_j1, " + Pair + "high_j2)")
+        RDF = RDF.Define(Pair + "low_dR", "ROOT::Math::VectorUtil::DeltaR(" +
+                        Pair + "low_j1, " + Pair + "low_j2)")
 
         ### dijet lvec ###
         RDF = RDF.Define(Pair + "high", Pair + "high_j1 + " + Pair + "high_j2")
