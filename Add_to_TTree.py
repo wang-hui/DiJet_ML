@@ -3,8 +3,8 @@ ROOT.ROOT.EnableImplicitMT()
 ROOT.gInterpreter.Declare('#include "Add_to_TTree.h"')
 
 #InputList = [500]
-InputList = [500, 600, 700, 800, 900, 1000, 1250, 1500, 1750, 2000, 2500, 3000]
-#InputList = ["QCD_1M_stride70"]
+#InputList = [500, 600, 700, 800, 900, 1000, 1250, 1500, 1750, 2000, 2500, 3000]
+InputList = ["QCD_2M_stride30"]
 
 InputDir = "/eos/uscms/store/user/huiwang/Dijet/ML_TTree/"
 OutputDir = "ML_TTree/"
