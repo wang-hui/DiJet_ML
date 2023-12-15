@@ -9,102 +9,129 @@ def fit_gaus (TH1):
     Mean = TH1.GetMean()
     MPV = TH1.GetXaxis().GetBinCenter(TH1.GetMaximumBin())
     RMS = TH1.GetStdDev()
-    #TH1.Fit("gaus", "0Q", "", Mean - 1.5*RMS, Mean + 1.5*RMS)
-    TH1.Fit("gaus", "0Q", "", MPV - 1.5*RMS, MPV + 1.5*RMS)
+    TH1.Fit("gaus", "0Q", "", Mean - 1.5*RMS, Mean + 1.5*RMS)
+    #TH1.Fit("gaus", "0Q", "", MPV - 1.5*RMS, MPV + 1.5*RMS)
 
     F1 = TH1.GetFunction("gaus")
     C = F1.GetParameter(0)
     Mu = F1.GetParameter(1)
     Sigma = F1.GetParameter(2)
 
-    TH1.Fit("gaus", "Q", "", Mu - 1.5*Sigma, Mu + 1.5*Sigma)
+    #TH1.Fit("gaus", "Q", "", Mu - 1.5*Sigma, Mu + 1.5*Sigma)
 
     return Mu, Sigma
 
-def evaluate_rdf (RDF, Name, Mass):
-    ML_Accuracy = Truth_Efficiency = ML_Efficiency = 0
+def get_acc_eff (RDF, TarName, TarHist, RefHist):
+    EventsTot = RDF.Count().GetValue()
+    Mu, Sigma = fit_gaus(RefHist)
+    RefHist_3Sigma = RefHist.Integral(RefHist.FindBin(Mu-3*Sigma), RefHist.FindBin(Mu+3*Sigma))
+    RefHistEff = RefHist_3Sigma / EventsTot
+
+    TarHist_3Sigma = TarHist.Integral(TarHist.FindBin(Mu-3*Sigma), TarHist.FindBin(Mu+3*Sigma))
+    TarHistEff = TarHist_3Sigma /  EventsTot
+
+    RDF_temp = RDF.Filter(TarName + " == Truth_QSMD")
+    EventsMatch = RDF_temp.Count().GetValue()
+    TarHistAcc = float(EventsMatch) / EventsTot
+
+    print("TruthEff %.2f" %RefHistEff, TarName + " Eff %.2f" % TarHistEff, TarName + " Acc %.2f" % TarHistAcc)
+    return RefHistEff, TarHistEff, TarHistAcc
+
+def evaluate_rdf (ML_pair_RDF, dR_pair_RDF, Name, Mass):
+    Truth_Eff = ML_Eff = ML_Acc = dR_Eff = dR_Acc = 0
     Xlow = 0
     Xhigh = 2000
     if Mass > 0:
         Xlow = Mass/4
         Xhigh = Mass*2
 
-    Truth_QSMD_M = RDF.Histo1D(ROOT.RDF.TH1DModel("Truth_QSMD_M", "Truth_QSMD_M", 100, Xlow, Xhigh),
+    Truth_QSMD_M = ML_pair_RDF.Histo1D(ROOT.RDF.TH1DModel("Truth_QSMD_M", "Truth_QSMD_M", 100, Xlow, Xhigh),
                     "Truth_QSMD_M", "weight")
-    ML_pred_M = RDF.Histo1D(ROOT.RDF.TH1DModel("ML_pred_M", "ML_pred_M", 100, Xlow, Xhigh),
-                    "ML_pred_M", "weight")
-    ML_pred_val = RDF.Histo1D(ROOT.RDF.TH1DModel("ML_pred_val", "ML_pred_val", 50, 0.3, 1.0),
-                    "ML_pred_val", "weight")
-    fourjetmasstev = RDF.Histo1D(ROOT.RDF.TH1DModel("fourjetmasstev", "fourjetmasstev", 100, 0.0, 5.0),
-                    "fourjetmasstev", "weight")
+    ML_pair_M = ML_pair_RDF.Histo1D(ROOT.RDF.TH1DModel("ML_pair_M", "ML_pair_M", 100, Xlow, Xhigh),
+                    "ML_pair_M", "weight")
+    ML_pair_val = ML_pair_RDF.Histo1D(ROOT.RDF.TH1DModel("ML_pair_val", "ML_pair_val", 50, 0.3, 1.0),
+                    "ML_pair_val", "weight")
+    dR_pair_M = dR_pair_RDF.Histo1D(ROOT.RDF.TH1DModel("dR_pair_M", "dR_pair_M", 100, Xlow, Xhigh),
+                    "dR_pair_M", "weight")
 
     MyCanvas = ROOT.TCanvas("MyCanvas", "MyCanvas", 600, 600)
     MyCanvas.SetLeftMargin(0.15)
     MyCanvas.SetRightMargin(0.1)
 
-    ML_pred_M.Draw()
-    ML_pred_M.SetTitle("QCD")
-    ML_pred_M.GetXaxis().SetTitle("Average dijet mass [GeV]")
-    ML_pred_M.GetYaxis().SetTitle("Events")
-    ML_pred_M.SetLineColor(ROOT.kGreen+1)
+    ML_pair_M.Draw()
+    ML_pair_M.SetTitle("QCD")
+    ML_pair_M.GetXaxis().SetTitle("Average dijet mass [GeV]")
+    ML_pair_M.GetYaxis().SetTitle("Events")
+    ML_pair_M.SetLineColor(ROOT.kRed)
+
+    dR_pair_M.Scale(ML_pair_M.GetEntries() / dR_pair_M.GetEntries())
+    dR_pair_M.Draw("same")
+    dR_pair_M.SetLineColor(ROOT.kBlue)
 
     MyLeg = ROOT.TLegend(0.6,0.7,0.9,0.9)
-    MyLeg.AddEntry(ML_pred_M.GetPtr(), "ML pred", "l")
+    MyLeg.AddEntry(ML_pair_M.GetPtr(), "ML pairing", "l")
+    MyLeg.AddEntry(dR_pair_M.GetPtr(), "dR pairing", "l")
 
     if Mass > 0:
         Truth_QSMD_M.Draw("same")
-        MyLeg.AddEntry(Truth_QSMD_M.GetPtr(), "truth", "l")
-        ML_pred_M.SetTitle("Gen mass " + str(Mass) + "GeV")
-        ML_pred_M.SetMaximum(Truth_QSMD_M.GetMaximum() * 1.2)
+        Truth_QSMD_M.SetLineColor(ROOT.kGreen+1)
+        MyLeg.AddEntry(Truth_QSMD_M.GetPtr(), "Truth", "l")
+        ML_pair_M.SetTitle("Gen mass " + str(Mass) + "GeV")
+        ML_pair_M.SetMaximum(Truth_QSMD_M.GetMaximum() * 1.2)
 
-        EventsTot = RDF.Count().GetValue()
-        Mu, Sigma = fit_gaus(Truth_QSMD_M)
-        Truth_QSMD_M_3Sigma = Truth_QSMD_M.Integral(
-            Truth_QSMD_M.FindBin(Mu-3*Sigma), Truth_QSMD_M.FindBin(Mu+3*Sigma))
-        Truth_Efficiency = Truth_QSMD_M_3Sigma / EventsTot
-        ML_pred_M_3Sigma = ML_pred_M.Integral(ML_pred_M.FindBin(Mu-3*Sigma), ML_pred_M.FindBin(Mu+3*Sigma))
-        ML_Efficiency = ML_pred_M_3Sigma /  EventsTot
-
-        RDF_temp = RDF.Filter("ML_pred == Truth_QSMD")
-        EventsMatch = RDF_temp.Count().GetValue()
-        ML_Accuracy = float(EventsMatch) / EventsTot
-
-        print ("ML accuracy: %.2f" %ML_Accuracy, "Truth efficiency: %.2f" %Truth_Efficiency,
-                "ML efficiency: %.2f" %ML_Efficiency)
+        Truth_Eff, ML_Eff, ML_Acc = get_acc_eff (ML_pair_RDF, "ML_pair", ML_pair_M, Truth_QSMD_M)
+        Truth_Eff, dR_Eff, dR_Acc = get_acc_eff (dR_pair_RDF, "dR_pair", dR_pair_M, Truth_QSMD_M)
 
     MyLeg.Draw()
     MyCanvas.SaveAs("results_temp/M2jAvg_" + Name + "_" + str(Mass) + "GeV.png")
 
-    ML_pred_val.Draw()
-    MyCanvas.SaveAs("results_temp/ML_pred_val_" + Name + "_" + str(Mass) + "GeV.png")
+    ML_pair_val.Draw()
+    MyCanvas.SaveAs("results_temp/ML_pair_val_" + Name + "_" + str(Mass) + "GeV.png")
 
-    fourjetmasstev.Draw()
-    MyCanvas.SaveAs("results_temp/M4jTev_" + Name + "_" + str(Mass) + "GeV.png")
+    return Truth_Eff, ML_Eff, ML_Acc, dR_Eff, dR_Acc
 
-    return ML_Accuracy, Truth_Efficiency, ML_Efficiency
+def get_first_last_acceptance (RDF):
+    CutReport = RDF.Report()
+    CutIter = iter(CutReport)
+    CutFirst = next(CutIter)
+    CutLast = None
+    for Cut in CutReport:
+        CutLast = Cut
 
-#SaveList = [
-#        "P1_Mhigh_TeV", "P1_Mlow_TeV",
-#        "P2_Mhigh_TeV", "P2_Mlow_TeV",
-#        "P3_Mhigh_TeV", "P3_Mlow_TeV",
-#        "P1_ML", "P2_ML", "P3_ML",
-#        "ML_pred_Phigh_lvec", "ML_pred_Plow_lvec"
-#]
+    return float(CutFirst.GetPass()) / CutFirst.GetAll(), float(CutLast.GetPass()) / CutFirst.GetAll()
 
-#InputList = [500]
+################### config #######################
+
+SigBG_ML_Thresholds = [0.93, 0.78, 0.63]       #cut values for tight(0.01), medium(0.05), and loose(0.1)
+
+#InputList = [500, 3000]
 InputList = [500, 600, 700, 800, 900, 1000, 1250, 1500, 1750, 2000, 2500, 3000]
-#InputList = ["QCD_1M_stride70"]
+#InputList = ["QCD_2M_stride30"]
+
+#cut flow
+cut_ML = False
+cut_dR = True
+cut_dEta = True
+cut_Masym = True
 
 Nbins = len(InputList)
 InputDir = "ML_TTree/"
-SkipGeoCut = True
 
-ML_Accuracy_Trig = ROOT.TH1F("ML_Accuracy_Trig", "ML_Accuracy_Trig", Nbins, 0.5, Nbins + 0.5)
-Truth_Efficiency_Trig = ROOT.TH1F("Truth_Efficiency_Trig", "Truth_Efficiency_Trig", Nbins, 0.5, Nbins + 0.5)
-ML_Efficiency_Trig = ROOT.TH1F("ML_Efficiency_Trig", "ML_Efficiency_Trig", Nbins, 0.5, Nbins + 0.5)
-ML_Accuracy_Masym = ROOT.TH1F("ML_Accuracy_Masym", "ML_Accuracy_Masym", Nbins, 0.5, Nbins + 0.5)
-Truth_Efficiency_Masym = ROOT.TH1F("Truth_Efficiency_Masym", "Truth_Efficiency_Masym", Nbins, 0.5, Nbins + 0.5)
-ML_Efficiency_Masym = ROOT.TH1F("ML_Efficiency_Masym", "ML_Efficiency_Masym", Nbins, 0.5, Nbins + 0.5)
+Truth_Eff_Trig_Hist = ROOT.TH1F("Truth_Eff_Trig_Hist", "Truth_Eff_Trig_Hist", Nbins, 0.5, Nbins + 0.5)
+ML_Eff_Trig_Hist = ROOT.TH1F("ML_Eff_Trig_Hist", "ML_Eff_Trig_Hist", Nbins, 0.5, Nbins + 0.5)
+ML_Acc_Trig_Hist = ROOT.TH1F("ML_Acc_Trig_Hist", "ML_Acc_Trig_Hist", Nbins, 0.5, Nbins + 0.5)
+dR_Eff_Trig_Hist = ROOT.TH1F("dR_Eff_Trig_Hist", "dR_Eff_Trig_Hist", Nbins, 0.5, Nbins + 0.5)
+dR_Acc_Trig_Hist = ROOT.TH1F("dR_Acc_Trig_Hist", "dR_Acc_Trig_Hist", Nbins, 0.5, Nbins + 0.5)
+ML_Trig_Acceptance_Hist = ROOT.TH1F("ML_Trig_Acceptance_Hist", "ML_Trig_Acceptance_Hist", Nbins, 0.5, Nbins + 0.5)
+dR_Trig_Acceptance_Hist = ROOT.TH1F("dR_Trig_Acceptance_Hist", "dR_Trig_Acceptance_Hist", Nbins, 0.5, Nbins + 0.5)
+
+Truth_Eff_Final_Hist = ROOT.TH1F("Truth_Eff_Final_Hist", "Truth_Eff_Final_Hist", Nbins, 0.5, Nbins + 0.5)
+ML_Eff_Final_Hist = ROOT.TH1F("ML_Eff_Final_Hist", "ML_Eff_Final_Hist", Nbins, 0.5, Nbins + 0.5)
+ML_Acc_Final_Hist = ROOT.TH1F("ML_Acc_Final_Hist", "ML_Acc_Final_Hist", Nbins, 0.5, Nbins + 0.5)
+dR_Eff_Final_Hist = ROOT.TH1F("dR_Eff_Final_Hist", "dR_Eff_Final_Hist", Nbins, 0.5, Nbins + 0.5)
+dR_Acc_Final_Hist = ROOT.TH1F("dR_Acc_Final_Hist", "dR_Acc_Final_Hist", Nbins, 0.5, Nbins + 0.5)
+ML_Final_Acceptance_Hist = ROOT.TH1F("ML_Final_Acceptance_Hist", "ML_Final_Acceptance_Hist", Nbins, 0.5, Nbins + 0.5)
+dR_Final_Acceptance_Hist = ROOT.TH1F("dR_Final_Acceptance_Hist", "dR_Final_Acceptance_Hist", Nbins, 0.5, Nbins + 0.5)
 
 for Idx, Input in enumerate(InputList):
     Mass = Input
@@ -125,8 +152,6 @@ for Idx, Input in enumerate(InputList):
 
     RDF = ROOT.RDataFrame(MainTree)
 
-    RDF = RDF.Filter("evt_trig == 1", "cut_Trig")
-
     RDF = RDF.Define("P1high_M", "P1high_MTeV * 1000")
     RDF = RDF.Define("P1low_M", "P1low_MTeV * 1000")
     RDF = RDF.Define("P2high_M", "P2high_MTeV * 1000")
@@ -143,61 +168,111 @@ for Idx, Input in enumerate(InputList):
     RDF = RDF.Define("P3_QSMD", "TMath::Sq(P3high_M - Mass) + TMath::Sq(P3low_M - Mass)")
 
     RDF = RDF.Define("Truth_QSMD", "min_index(P1_QSMD, P2_QSMD, P3_QSMD)")
-    RDF = RDF.Define("ML_pred", "max_index_val(P1_ML, P2_ML, P3_ML).first")
-    RDF = RDF.Define("ML_pred_val", "max_index_val(P1_ML, P2_ML, P3_ML).second")
+    RDF = RDF.Define("dR_pair", "min_index(abs(P1_M - Mjj_avg_dRpairing_GeV)," +
+                     "abs(P2_M - Mjj_avg_dRpairing_GeV), abs(P3_M - Mjj_avg_dRpairing_GeV))")
+    RDF = RDF.Define("ML_pair", "max_index_val(P1_ML, P2_ML, P3_ML).first")
+    RDF = RDF.Define("ML_pair_val", "max_index_val(P1_ML, P2_ML, P3_ML).second")
 
     RDF = RDF.Define("Truth_QSMD_M", "col_index<float>(P1_M, P2_M, P3_M, Truth_QSMD)")
-    RDF = RDF.Define("ML_pred_M", "col_index<float>(P1_M, P2_M, P3_M, ML_pred)")
+    RDF = RDF.Define("dR_pair_M", "col_index<float>(P1_M, P2_M, P3_M, dR_pair)")
+    RDF = RDF.Define("ML_pair_M", "col_index<float>(P1_M, P2_M, P3_M, ML_pair)")
 
     print ("Trig cut")
-    ML_Accuracy, Truth_Efficiency, ML_Efficiency = evaluate_rdf(RDF, "cut_Trig", Mass)
-    ML_Accuracy_Trig.SetBinContent(Idx + 1, ML_Accuracy)
-    Truth_Efficiency_Trig.SetBinContent(Idx + 1, Truth_Efficiency)
-    ML_Efficiency_Trig.SetBinContent(Idx + 1, ML_Efficiency)
+    RDF = RDF.Filter("evt_trig == 1", "cut_Trig")
+    Truth_Eff, ML_Eff, ML_Acc, dR_Eff, dR_Acc = evaluate_rdf(RDF, RDF, "cut_Trig", Mass)
+    Truth_Eff_Trig_Hist.SetBinContent(Idx + 1, Truth_Eff)
+    ML_Eff_Trig_Hist.SetBinContent(Idx + 1, ML_Eff)
+    ML_Acc_Trig_Hist.SetBinContent(Idx + 1, ML_Acc)
+    dR_Eff_Trig_Hist.SetBinContent(Idx + 1, dR_Eff)
+    dR_Acc_Trig_Hist.SetBinContent(Idx + 1, dR_Acc)
 
-    # dR cut
+    # ML cut
+    if cut_ML:
+        RDF = RDF.Filter("SigBG_ML > " + str(SigBG_ML_Thresholds[0]), "cut_ML")
+        print ("ML cut")
+        Truth_Eff, ML_Eff, ML_Acc, dR_Eff, dR_Acc = evaluate_rdf(RDF, RDF, "cut_ML", Mass)
+
     RDF = RDF.Define("P1JetsVec", "to_vec(P1high_j1, P1high_j2, P1low_j1, P1low_j2)")
     RDF = RDF.Define("P2JetsVec", "to_vec(P2high_j1, P2high_j2, P2low_j1, P2low_j2)")
     RDF = RDF.Define("P3JetsVec", "to_vec(P3high_j1, P3high_j2, P3low_j1, P3low_j2)")
-    RDF = RDF.Define("ML_pred_Jets", "col_index<std::vector<lvec>>(P1JetsVec, P2JetsVec, P3JetsVec, ML_pred)")
-    RDF = RDF.Define("ML_pred_dR1", "ROOT::Math::VectorUtil::DeltaR(ML_pred_Jets[0], ML_pred_Jets[1])")
-    RDF = RDF.Define("ML_pred_dR2", "ROOT::Math::VectorUtil::DeltaR(ML_pred_Jets[2], ML_pred_Jets[3])")
 
-    if not SkipGeoCut:
-        RDF = RDF.Filter("ML_pred_dR1 < 2 && ML_pred_dR2 < 2", "cut_dR")
+    RDF = RDF.Define("ML_pair_Jets", "col_index<std::vector<lvec>>(P1JetsVec, P2JetsVec, P3JetsVec, ML_pair)")
+    RDF = RDF.Define("ML_pair_dR1", "ROOT::Math::VectorUtil::DeltaR(ML_pair_Jets[0], ML_pair_Jets[1])")
+    RDF = RDF.Define("ML_pair_dR2", "ROOT::Math::VectorUtil::DeltaR(ML_pair_Jets[2], ML_pair_Jets[3])")
+
+    RDF = RDF.Define("dR_pair_Jets", "col_index<std::vector<lvec>>(P1JetsVec, P2JetsVec, P3JetsVec, dR_pair)")
+    RDF = RDF.Define("dR_pair_dR1", "ROOT::Math::VectorUtil::DeltaR(dR_pair_Jets[0], dR_pair_Jets[1])")
+    RDF = RDF.Define("dR_pair_dR2", "ROOT::Math::VectorUtil::DeltaR(dR_pair_Jets[2], dR_pair_Jets[3])")
+
+    RDF = RDF.Define("ML_pair_Phigh_lvec", "ML_pair_Jets[0] + ML_pair_Jets[1]")
+    RDF = RDF.Define("ML_pair_Plow_lvec", "ML_pair_Jets[2] + ML_pair_Jets[3]")
+    RDF = RDF.Define("dR_pair_Phigh_lvec", "dR_pair_Jets[0] + dR_pair_Jets[1]")
+    RDF = RDF.Define("dR_pair_Plow_lvec", "dR_pair_Jets[2] + dR_pair_Jets[3]")
+
+    ML_pair_RDF = RDF
+    dR_pair_RDF = RDF
+
+    # dR cut
+    if cut_dR:
+        ML_pair_RDF = ML_pair_RDF.Filter("ML_pair_dR1 < 2 && ML_pair_dR2 < 2", "ML_pair_cut_dR")
+        dR_pair_RDF = dR_pair_RDF.Filter("dR_pair_dR1 < 2 && dR_pair_dR2 < 2", "dR_pair_cut_dR")
         print ("dR cut")
-        ML_Accuracy, Truth_Efficiency, ML_Efficiency = evaluate_rdf(RDF, "cut_dR", Mass)
+        Truth_Eff, ML_Eff, ML_Acc, dR_Eff, dR_Acc = evaluate_rdf(ML_pair_RDF, dR_pair_RDF, "cut_dR", Mass)
 
     # dEta cut
-    RDF = RDF.Define("ML_pred_Phigh_lvec", "ML_pred_Jets[0] + ML_pred_Jets[1]")
-    RDF = RDF.Define("ML_pred_Plow_lvec", "ML_pred_Jets[2] + ML_pred_Jets[3]")
-
-    if not SkipGeoCut:
-        RDF = RDF.Filter("abs(ML_pred_Phigh_lvec.Eta() - ML_pred_Plow_lvec.Eta()) < 1.1", "cut_dEta")
+    if cut_dEta:
+        ML_pair_RDF = ML_pair_RDF.Filter("abs(ML_pair_Phigh_lvec.Eta() - ML_pair_Plow_lvec.Eta()) < 1.1",
+                                        "ML_pair_cut_dEta")
+        dR_pair_RDF = dR_pair_RDF.Filter("abs(dR_pair_Phigh_lvec.Eta() - dR_pair_Plow_lvec.Eta()) < 1.1",
+                                        "dR_pair_cut_dEta")
         print ("dEta cut")
-        ML_Accuracy, Truth_Efficiency, ML_Efficiency = evaluate_rdf(RDF, "cut_dEta", Mass)
+        Truth_Eff, ML_Eff, ML_Acc, dR_Eff, dR_Acc = evaluate_rdf(ML_pair_RDF, dR_pair_RDF, "cut_dEta", Mass)
 
     # Masym cut
-    RDF = RDF.Filter("abs(ML_pred_Phigh_lvec.M() - ML_pred_Plow_lvec.M()) / (ML_pred_Phigh_lvec.M() + ML_pred_Plow_lvec.M()) < 0.1", "cut_Masym")
+    if cut_Masym:
+        ML_pair_RDF = ML_pair_RDF.Filter("abs(ML_pair_Phigh_lvec.M() - ML_pair_Plow_lvec.M()) /" + 
+                        "(ML_pair_Phigh_lvec.M() + ML_pair_Plow_lvec.M()) < 0.1", "ML_pair_cut_Masym")
+        dR_pair_RDF = dR_pair_RDF.Filter("abs(dR_pair_Phigh_lvec.M() - dR_pair_Plow_lvec.M()) /" + 
+                        "(dR_pair_Phigh_lvec.M() + dR_pair_Plow_lvec.M()) < 0.1", "dR_pair_cut_Masym")
+        print ("Masym cut")
+        Truth_Eff, ML_Eff, ML_Acc, dR_Eff, dR_Acc = evaluate_rdf(ML_pair_RDF, dR_pair_RDF, "cut_Masym", Mass)
 
-    print ("Masym cut")
-    ML_Accuracy, Truth_Efficiency, ML_Efficiency = evaluate_rdf(RDF, "cut_Masym", Mass)
-    ML_Accuracy_Masym.SetBinContent(Idx + 1, ML_Accuracy)
-    Truth_Efficiency_Masym.SetBinContent(Idx + 1, Truth_Efficiency)
-    ML_Efficiency_Masym.SetBinContent(Idx + 1, ML_Efficiency)
+    Truth_Eff_Final_Hist.SetBinContent(Idx + 1, Truth_Eff)
+    ML_Eff_Final_Hist.SetBinContent(Idx + 1, ML_Eff)
+    ML_Acc_Final_Hist.SetBinContent(Idx + 1, ML_Acc)
+    dR_Eff_Final_Hist.SetBinContent(Idx + 1, dR_Eff)
+    dR_Acc_Final_Hist.SetBinContent(Idx + 1, dR_Acc)
 
-    CutReport = RDF.Report()
-    CutReport.Print()
+    print("ML pair acceptance")
+    ML_Trig_Acceptance, ML_Final_Acceptance = get_first_last_acceptance(ML_pair_RDF)
+    ML_Trig_Acceptance_Hist.SetBinContent(Idx + 1, ML_Trig_Acceptance)
+    ML_Final_Acceptance_Hist.SetBinContent(Idx + 1, ML_Final_Acceptance)
+    print(ML_Trig_Acceptance, ML_Final_Acceptance)
+    MLReport = ML_pair_RDF.Report()
+    MLReport.Print()
 
-#    OutCols = ROOT.vector("string")()
-#    for Col in SaveList: OutCols.push_back(Col)
-#    RDF.Snapshot("tree_ML", "test.root", OutCols)
+    print("dR pair acceptance")
+    dR_Trig_Acceptance, dR_Final_Acceptance = get_first_last_acceptance(dR_pair_RDF)
+    dR_Trig_Acceptance_Hist.SetBinContent(Idx + 1, dR_Trig_Acceptance)
+    dR_Final_Acceptance_Hist.SetBinContent(Idx + 1, dR_Final_Acceptance)
+    print(dR_Trig_Acceptance, dR_Final_Acceptance)
+    dRReport = dR_pair_RDF.Report()
+    dRReport.Print()
 
-Hists = ROOT.TFile("results_temp/Hists.root", "recreate")
-ML_Accuracy_Trig.Write()
-Truth_Efficiency_Trig.Write()
-ML_Efficiency_Trig.Write()
-ML_Accuracy_Masym.Write()
-Truth_Efficiency_Masym.Write()
-ML_Efficiency_Masym.Write()
+if Nbins > 1:
+    Hists = ROOT.TFile("results_temp/Hists.root", "recreate")
+    Truth_Eff_Trig_Hist.Write()
+    ML_Eff_Trig_Hist.Write()
+    ML_Acc_Trig_Hist.Write()
+    dR_Eff_Trig_Hist.Write()
+    dR_Acc_Trig_Hist.Write()
+    ML_Trig_Acceptance_Hist.Write()
+    dR_Trig_Acceptance_Hist.Write()
 
+    Truth_Eff_Final_Hist.Write()
+    ML_Eff_Final_Hist.Write()
+    ML_Acc_Final_Hist.Write()
+    dR_Eff_Final_Hist.Write()
+    dR_Acc_Final_Hist.Write()
+    ML_Final_Acceptance_Hist.Write()
+    dR_Final_Acceptance_Hist.Write()

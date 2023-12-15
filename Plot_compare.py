@@ -5,30 +5,24 @@ import ROOT as rt
 
 BaseName = "trigger"
 BaseFileList = ["Hists_all_cuts.root"]
-BaseHistList = ["ML_Efficiency_Trig"]
+#BaseHistList = ["ML_Eff_Trig_Hist"]
+BaseHistList = ["ML_Trig_Acceptence_Hist"]
 
-Comp1Name = "trigger + massAsymm"
-#Comp1FileList = BaseFileList
-Comp1FileList = ["Hists_skip_geo_cuts.root"]
-#Comp1HistList = BaseHistList
-Comp1HistList = ["ML_Efficiency_Masym"]
+Comp1Name = "trigger + dR + dEta + massAsymm"
+Comp1FileList = ["Hists_all_cuts.root"]
+#Comp1HistList = ["ML_Eff_Final_Hist"]
+Comp1HistList = ["ML_Final_Acceptence_Hist"]
 
-Comp2Name = "trigger + dR + dEta + massAsymm"
-Comp2FileList = BaseFileList
-Comp2FileList = ["Hists_all_cuts.root"]
-Comp2HistList = BaseHistList
-Comp2HistList = ["ML_Efficiency_Masym"]
-
-Comp3Name = "My new, PU"
-Comp3FileList = BaseFileList
-Comp3FileList = ["My_zeroOut_PU_respCorr_ieta26.root"]
-Comp3HistList = BaseHistList
-#Comp3HistList = ["myCaloMETBE_h"]
+Comp2Name = "trigger + ML tight"
+Comp2FileList = ["Hists_ML_cut.root"]
+#Comp2HistList = ["ML_Eff_Final_Hist"]
+Comp2HistList = ["ML_Final_Acceptence_Hist"]
 
 ShapeComp = False
 SetLogY = False
 
-YTitle = "Efficiency"
+#YTitle = "Pairing Efficiency"
+YTitle = "Cut Acceptence"
 XTitle = "Gen Mass [GeV]"
 #XTitle = "nConstituents"
 
@@ -53,8 +47,8 @@ class MyStruct:
 
 StructList = []
 Base = MyStruct(BaseName, BaseFileList, BaseHistList, rt.kBlue, StructList)
-Comp1 = MyStruct(Comp1Name, Comp1FileList, Comp1HistList, rt.kRed, StructList)
-Comp2 = MyStruct(Comp2Name, Comp2FileList, Comp2HistList, rt.kGreen+1, StructList)
+Comp1 = MyStruct(Comp1Name, Comp1FileList, Comp1HistList, rt.kGreen+1, StructList)
+Comp2 = MyStruct(Comp2Name, Comp2FileList, Comp2HistList, rt.kRed, StructList)
 #Comp3 = MyStruct(Comp3Name, Comp3FileList, Comp3HistList, rt.kYellow+1, StructList)
 
 rt.TH1.AddDirectory(rt.kFALSE)
