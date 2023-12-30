@@ -102,17 +102,17 @@ def get_first_last_acceptance (RDF):
 
 ################### config #######################
 
-SigBG_ML_Thresholds = [0.93, 0.78, 0.63]       #cut values for tight(0.01), medium(0.05), and loose(0.1)
+SigBG_ML_Thresholds = [0.9426, 0.8016, 0.6509]       #cut values for tight(0.01), medium(0.05), and loose(0.1)
 
 #InputList = [500, 3000]
-InputList = [500, 600, 700, 800, 900, 1000, 1250, 1500, 1750, 2000, 2500, 3000]
-#InputList = ["QCD_2M_stride30"]
+#InputList = [500, 600, 700, 800, 900, 1000, 1250, 1500, 1750, 2000, 2500, 3000]
+InputList = ["QCD_2M_stride30"]
 
 #cut flow
-cut_ML = False
-cut_dR = True
-cut_dEta = True
-cut_Masym = True
+cut_ML = True
+cut_dR = False
+cut_dEta = False
+cut_Masym = False
 
 Nbins = len(InputList)
 InputDir = "ML_TTree/"
@@ -188,7 +188,7 @@ for Idx, Input in enumerate(InputList):
 
     # ML cut
     if cut_ML:
-        RDF = RDF.Filter("SigBG_ML > " + str(SigBG_ML_Thresholds[0]), "cut_ML")
+        RDF = RDF.Filter("SigBG_ML > " + str(SigBG_ML_Thresholds[1]), "cut_ML")
         print ("ML cut")
         Truth_Eff, ML_Eff, ML_Acc, dR_Eff, dR_Acc = evaluate_rdf(RDF, RDF, "cut_ML", Mass)
 
