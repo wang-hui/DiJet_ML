@@ -5,26 +5,25 @@ import ROOT as rt
 
 BaseName = "trigger"
 BaseFileList = ["Hists_all_cuts.root"]
-#BaseHistList = ["ML_Eff_Trig_Hist"]
-BaseHistList = ["ML_Trig_Acceptence_Hist"]
+BaseHistList = ["ML_Eff_Trig_Hist"]
+#BaseHistList = ["ML_Trig_Acceptance_Hist"]
 
 Comp1Name = "trigger + dR + dEta + massAsymm"
 Comp1FileList = ["Hists_all_cuts.root"]
-#Comp1HistList = ["ML_Eff_Final_Hist"]
-Comp1HistList = ["ML_Final_Acceptence_Hist"]
+Comp1HistList = ["ML_Eff_Final_Hist"]
+#Comp1HistList = ["ML_Final_Acceptance_Hist"]
 
-Comp2Name = "trigger + ML tight"
+Comp2Name = "trigger + ML medium"
 Comp2FileList = ["Hists_ML_cut.root"]
-#Comp2HistList = ["ML_Eff_Final_Hist"]
-Comp2HistList = ["ML_Final_Acceptence_Hist"]
+Comp2HistList = ["ML_Eff_Final_Hist"]
+#Comp2HistList = ["ML_Final_Acceptance_Hist"]
 
 ShapeComp = False
 SetLogY = False
 
-#YTitle = "Pairing Efficiency"
-YTitle = "Cut Acceptence"
+YTitle = "Pairing Efficiency"
+#YTitle = "Cut Acceptance"
 XTitle = "Gen Mass [GeV]"
-#XTitle = "nConstituents"
 
 InputList = [500, 600, 700, 800, 900, 1000, 1250, 1500, 1750, 2000, 2500, 3000]
 
@@ -122,6 +121,7 @@ for i in range(len(BaseFileList)):
                 BaseFrame.Draw()
 
                 MyLine = rt.TLine(BaseFrame.GetXaxis().GetXmin(), 1.0, BaseFrame.GetXaxis().GetXmax(), 1.0)
+                MyLine.SetLineColor(rt.kBlue)
                 MyLine.Draw()
             else:
                 if YMaxTemp > BaseHist.GetMaximum(): 

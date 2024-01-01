@@ -58,25 +58,25 @@ def evaluate_rdf (ML_pair_RDF, dR_pair_RDF, Name, Mass):
     MyCanvas.SetLeftMargin(0.15)
     MyCanvas.SetRightMargin(0.1)
 
-    ML_pair_M.Draw()
-    ML_pair_M.SetTitle("QCD")
+    ML_pair_M.Draw("e")
+    ML_pair_M.SetTitle("QCD " + Name)
     ML_pair_M.GetXaxis().SetTitle("Average dijet mass [GeV]")
     ML_pair_M.GetYaxis().SetTitle("Events")
     ML_pair_M.SetLineColor(ROOT.kRed)
 
     dR_pair_M.Scale(ML_pair_M.GetEntries() / dR_pair_M.GetEntries())
-    dR_pair_M.Draw("same")
+    dR_pair_M.Draw("esame")
     dR_pair_M.SetLineColor(ROOT.kBlue)
 
     MyLeg = ROOT.TLegend(0.6,0.7,0.9,0.9)
-    MyLeg.AddEntry(ML_pair_M.GetPtr(), "ML pairing", "l")
-    MyLeg.AddEntry(dR_pair_M.GetPtr(), "dR pairing", "l")
+    MyLeg.AddEntry(ML_pair_M.GetPtr(), "ML pairing", "le")
+    MyLeg.AddEntry(dR_pair_M.GetPtr(), "dR pairing", "le")
 
     if Mass > 0:
-        Truth_QSMD_M.Draw("same")
+        Truth_QSMD_M.Draw("esame")
         Truth_QSMD_M.SetLineColor(ROOT.kGreen+1)
-        MyLeg.AddEntry(Truth_QSMD_M.GetPtr(), "Truth", "l")
-        ML_pair_M.SetTitle("Gen mass " + str(Mass) + "GeV")
+        MyLeg.AddEntry(Truth_QSMD_M.GetPtr(), "Truth", "le")
+        ML_pair_M.SetTitle("Gen mass " + str(Mass) + "GeV " + Name)
         ML_pair_M.SetMaximum(Truth_QSMD_M.GetMaximum() * 1.2)
 
         Truth_Eff, ML_Eff, ML_Acc = get_acc_eff (ML_pair_RDF, "ML_pair", ML_pair_M, Truth_QSMD_M)
@@ -85,10 +85,10 @@ def evaluate_rdf (ML_pair_RDF, dR_pair_RDF, Name, Mass):
     MyLeg.Draw()
     MyCanvas.SaveAs("results_temp/M2jAvg_" + Name + "_" + str(Mass) + "GeV.png")
 
-    ML_pair_val.Draw()
-    MyCanvas.SaveAs("results_temp/ML_pair_val_" + Name + "_" + str(Mass) + "GeV.png")
+    #ML_pair_val.Draw()
+    #MyCanvas.SaveAs("results_temp/ML_pair_val_" + Name + "_" + str(Mass) + "GeV.png")
 
-    return Truth_Eff, ML_Eff, ML_Acc, dR_Eff, dR_Acc
+    return (Truth_Eff, ML_Eff, ML_Acc, dR_Eff, dR_Acc)
 
 def get_first_last_acceptance (RDF):
     CutReport = RDF.Report()
@@ -103,16 +103,22 @@ def get_first_last_acceptance (RDF):
 ################### config #######################
 
 SigBG_ML_Thresholds = [0.9426, 0.8016, 0.6509]       #cut values for tight(0.01), medium(0.05), and loose(0.1)
+SigBG_ML_Threshold = str(SigBG_ML_Thresholds[1])
+
+AlphaBins = [0.15, 0.25, 0.35, 0.5]
+AlphaCutLow = "ML_pair_Alpha > " + str(AlphaBins[0]) + " && ML_pair_Alpha < " + str(AlphaBins[1])
+AlphaCutMed = "ML_pair_Alpha > " + str(AlphaBins[1]) + " && ML_pair_Alpha < " + str(AlphaBins[2])
+AlphaCutHigh = "ML_pair_Alpha > " + str(AlphaBins[2]) + " && ML_pair_Alpha < " + str(AlphaBins[3])
 
 #InputList = [500, 3000]
-#InputList = [500, 600, 700, 800, 900, 1000, 1250, 1500, 1750, 2000, 2500, 3000]
-InputList = ["QCD_2M_stride30"]
+InputList = [500, 600, 700, 800, 900, 1000, 1250, 1500, 1750, 2000, 2500, 3000]
+#InputList = ["QCD_2M_stride30"]
 
 #cut flow
-cut_ML = True
-cut_dR = False
-cut_dEta = False
-cut_Masym = False
+cut_ML = False
+cut_dR = True
+cut_dEta = True
+cut_Masym = True
 
 Nbins = len(InputList)
 InputDir = "ML_TTree/"
@@ -152,20 +158,12 @@ for Idx, Input in enumerate(InputList):
 
     RDF = ROOT.RDataFrame(MainTree)
 
-    RDF = RDF.Define("P1high_M", "P1high_MTeV * 1000")
-    RDF = RDF.Define("P1low_M", "P1low_MTeV * 1000")
-    RDF = RDF.Define("P2high_M", "P2high_MTeV * 1000")
-    RDF = RDF.Define("P2low_M", "P2low_MTeV * 1000")
-    RDF = RDF.Define("P3high_M", "P3high_MTeV * 1000")
-    RDF = RDF.Define("P3low_M", "P3low_MTeV * 1000")
-
-    RDF = RDF.Define("P1_M", "(P1high_M + P1low_M)/2")
-    RDF = RDF.Define("P2_M", "(P2high_M + P2low_M)/2")
-    RDF = RDF.Define("P3_M", "(P3high_M + P3low_M)/2")
-
-    RDF = RDF.Define("P1_QSMD", "TMath::Sq(P1high_M - Mass) + TMath::Sq(P1low_M - Mass)")
-    RDF = RDF.Define("P2_QSMD", "TMath::Sq(P2high_M - Mass) + TMath::Sq(P2low_M - Mass)")
-    RDF = RDF.Define("P3_QSMD", "TMath::Sq(P3high_M - Mass) + TMath::Sq(P3low_M - Mass)")
+    for Pair in ["P1", "P2", "P3"]:
+        RDF = RDF.Define(Pair + "high_M", Pair + "high_MTeV * 1000")
+        RDF = RDF.Define(Pair + "low_M", Pair + "low_MTeV * 1000")
+        RDF = RDF.Define(Pair + "_M", "(" + Pair + "high_M + " + Pair + "low_M)/2")
+        RDF = RDF.Define(Pair + "_QSMD", "TMath::Sq(" + Pair +
+                        "high_M - Mass) + TMath::Sq(" + Pair + "low_M - Mass)")
 
     RDF = RDF.Define("Truth_QSMD", "min_index(P1_QSMD, P2_QSMD, P3_QSMD)")
     RDF = RDF.Define("dR_pair", "min_index(abs(P1_M - Mjj_avg_dRpairing_GeV)," +
@@ -177,20 +175,32 @@ for Idx, Input in enumerate(InputList):
     RDF = RDF.Define("dR_pair_M", "col_index<float>(P1_M, P2_M, P3_M, dR_pair)")
     RDF = RDF.Define("ML_pair_M", "col_index<float>(P1_M, P2_M, P3_M, ML_pair)")
 
+    RDF = RDF.Define("ML_pair_Alpha", "ML_pair_M / fourjetmasstev / 1000")
+
     print ("Trig cut")
     RDF = RDF.Filter("evt_trig == 1", "cut_Trig")
-    Truth_Eff, ML_Eff, ML_Acc, dR_Eff, dR_Acc = evaluate_rdf(RDF, RDF, "cut_Trig", Mass)
-    Truth_Eff_Trig_Hist.SetBinContent(Idx + 1, Truth_Eff)
-    ML_Eff_Trig_Hist.SetBinContent(Idx + 1, ML_Eff)
-    ML_Acc_Trig_Hist.SetBinContent(Idx + 1, ML_Acc)
-    dR_Eff_Trig_Hist.SetBinContent(Idx + 1, dR_Eff)
-    dR_Acc_Trig_Hist.SetBinContent(Idx + 1, dR_Acc)
+    # order: Truth_Eff, ML_Eff, ML_Acc, dR_Eff, dR_Acc
+    EffAccTuple = evaluate_rdf(RDF, RDF, "cut_Trig", Mass)
+    Truth_Eff_Trig_Hist.SetBinContent(Idx + 1, EffAccTuple[0])
+    ML_Eff_Trig_Hist.SetBinContent(Idx + 1, EffAccTuple[1])
+    ML_Acc_Trig_Hist.SetBinContent(Idx + 1, EffAccTuple[2])
+    dR_Eff_Trig_Hist.SetBinContent(Idx + 1, EffAccTuple[3])
+    dR_Acc_Trig_Hist.SetBinContent(Idx + 1, EffAccTuple[4])
 
     # ML cut
     if cut_ML:
-        RDF = RDF.Filter("SigBG_ML > " + str(SigBG_ML_Thresholds[1]), "cut_ML")
+        RDF = RDF.Filter("SigBG_ML > " + SigBG_ML_Threshold, "cut_ML")
         print ("ML cut")
-        Truth_Eff, ML_Eff, ML_Acc, dR_Eff, dR_Acc = evaluate_rdf(RDF, RDF, "cut_ML", Mass)
+        EffAccTuple = evaluate_rdf(RDF, RDF, "cut_ML", Mass)
+        if Mass == 0:
+            RDF_AlphaLow = RDF.Filter(AlphaCutLow, "cut_AlphaLow")
+            EffAccTemp = evaluate_rdf(RDF_AlphaLow, RDF_AlphaLow, "cut_AlphaLow", Mass)
+
+            RDF_AlphaMed = RDF.Filter(AlphaCutMed, "cut_AlphaMed")
+            EffAccTemp = evaluate_rdf(RDF_AlphaMed, RDF_AlphaMed, "cut_AlphaMed", Mass)
+
+            RDF_AlphaHigh = RDF.Filter(AlphaCutHigh, "cut_AlphaHigh")
+            EffAccTemp = evaluate_rdf(RDF_AlphaHigh, RDF_AlphaHigh, "cut_AlphaHigh", Mass)
 
     RDF = RDF.Define("P1JetsVec", "to_vec(P1high_j1, P1high_j2, P1low_j1, P1low_j2)")
     RDF = RDF.Define("P2JetsVec", "to_vec(P2high_j1, P2high_j2, P2low_j1, P2low_j2)")
@@ -217,7 +227,7 @@ for Idx, Input in enumerate(InputList):
         ML_pair_RDF = ML_pair_RDF.Filter("ML_pair_dR1 < 2 && ML_pair_dR2 < 2", "ML_pair_cut_dR")
         dR_pair_RDF = dR_pair_RDF.Filter("dR_pair_dR1 < 2 && dR_pair_dR2 < 2", "dR_pair_cut_dR")
         print ("dR cut")
-        Truth_Eff, ML_Eff, ML_Acc, dR_Eff, dR_Acc = evaluate_rdf(ML_pair_RDF, dR_pair_RDF, "cut_dR", Mass)
+        EffAccTuple = evaluate_rdf(ML_pair_RDF, dR_pair_RDF, "cut_dR", Mass)
 
     # dEta cut
     if cut_dEta:
@@ -226,7 +236,7 @@ for Idx, Input in enumerate(InputList):
         dR_pair_RDF = dR_pair_RDF.Filter("abs(dR_pair_Phigh_lvec.Eta() - dR_pair_Plow_lvec.Eta()) < 1.1",
                                         "dR_pair_cut_dEta")
         print ("dEta cut")
-        Truth_Eff, ML_Eff, ML_Acc, dR_Eff, dR_Acc = evaluate_rdf(ML_pair_RDF, dR_pair_RDF, "cut_dEta", Mass)
+        EffAccTuple = evaluate_rdf(ML_pair_RDF, dR_pair_RDF, "cut_dEta", Mass)
 
     # Masym cut
     if cut_Masym:
@@ -235,13 +245,14 @@ for Idx, Input in enumerate(InputList):
         dR_pair_RDF = dR_pair_RDF.Filter("abs(dR_pair_Phigh_lvec.M() - dR_pair_Plow_lvec.M()) /" + 
                         "(dR_pair_Phigh_lvec.M() + dR_pair_Plow_lvec.M()) < 0.1", "dR_pair_cut_Masym")
         print ("Masym cut")
-        Truth_Eff, ML_Eff, ML_Acc, dR_Eff, dR_Acc = evaluate_rdf(ML_pair_RDF, dR_pair_RDF, "cut_Masym", Mass)
+        EffAccTuple = evaluate_rdf(ML_pair_RDF, dR_pair_RDF, "cut_Masym", Mass)
 
-    Truth_Eff_Final_Hist.SetBinContent(Idx + 1, Truth_Eff)
-    ML_Eff_Final_Hist.SetBinContent(Idx + 1, ML_Eff)
-    ML_Acc_Final_Hist.SetBinContent(Idx + 1, ML_Acc)
-    dR_Eff_Final_Hist.SetBinContent(Idx + 1, dR_Eff)
-    dR_Acc_Final_Hist.SetBinContent(Idx + 1, dR_Acc)
+    # order: Truth_Eff, ML_Eff, ML_Acc, dR_Eff, dR_Acc
+    Truth_Eff_Final_Hist.SetBinContent(Idx + 1, EffAccTuple[0])
+    ML_Eff_Final_Hist.SetBinContent(Idx + 1, EffAccTuple[1])
+    ML_Acc_Final_Hist.SetBinContent(Idx + 1, EffAccTuple[2])
+    dR_Eff_Final_Hist.SetBinContent(Idx + 1, EffAccTuple[3])
+    dR_Acc_Final_Hist.SetBinContent(Idx + 1, EffAccTuple[4])
 
     print("ML pair acceptance")
     ML_Trig_Acceptance, ML_Final_Acceptance = get_first_last_acceptance(ML_pair_RDF)

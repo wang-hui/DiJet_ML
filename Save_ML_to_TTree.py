@@ -6,8 +6,8 @@ print("tensorflow version: ", tf.__version__)
 print("running on GPU: ", tf.test.is_built_with_cuda())
 
 #InputList = [500]
-#InputList = [500, 600, 700, 800, 900, 1000, 1250, 1500, 1750, 2000, 2500, 3000]
-InputList = ["QCD_2M_stride30"]
+InputList = [500, 600, 700, 800, 900, 1000, 1250, 1500, 1750, 2000, 2500, 3000]
+#InputList = ["QCD_2M_stride30"]
 
 ReadList = ["fourjetmasstev", "P1high_MTeV", "P1low_MTeV", "P1high_dR", "P1low_dR",
                               "P2high_MTeV", "P2low_MTeV", "P2high_dR", "P2low_dR",
