@@ -37,7 +37,10 @@ def get_acc_eff (RDF, TarName, TarHist, RefHist):
     print("TruthEff %.2f" %RefHistEff, TarName + " Eff %.2f" % TarHistEff, TarName + " Acc %.2f" % TarHistAcc)
     return RefHistEff, TarHistEff, TarHistAcc
 
-def evaluate_rdf (ML_pair_RDF, dR_pair_RDF, Name, Mass):
+def evaluate_rdf (ML_pair_RDF, dR_pair_RDF, Name):
+    NpCol = ML_pair_RDF.AsNumpy(["Mass"])
+    Mass = NpCol["Mass"][0]
+
     Truth_Eff = ML_Eff = ML_Acc = dR_Eff = dR_Acc = 0
     Xlow = 0
     Xhigh = 2000
@@ -110,12 +113,15 @@ AlphaCutLow = "ML_pair_Alpha > " + str(AlphaBins[0]) + " && ML_pair_Alpha < " + 
 AlphaCutMed = "ML_pair_Alpha > " + str(AlphaBins[1]) + " && ML_pair_Alpha < " + str(AlphaBins[2])
 AlphaCutHigh = "ML_pair_Alpha > " + str(AlphaBins[2]) + " && ML_pair_Alpha < " + str(AlphaBins[3])
 
-#InputList = [500, 3000]
-InputList = [500, 600, 700, 800, 900, 1000, 1250, 1500, 1750, 2000, 2500, 3000]
+#InputList = [500]
+#InputList = [500, 600, 700, 800, 900, 1000, 1250, 1500, 1750, 2000, 2500, 3000]
 #InputList = ["QCD_2M_stride30"]
+InputList = ["Ms2000_Mc500", "Ms4000_Mc1000", "Ms6000_Mc1600", "Ms8000_Mc2000", "Ms9000_Mc2250", "Ms8000_Mc3000"]
 
 #cut flow
 cut_ML = False
+cut_Alpha = False
+
 cut_dR = True
 cut_dEta = True
 cut_Masym = True
@@ -140,11 +146,9 @@ ML_Final_Acceptance_Hist = ROOT.TH1F("ML_Final_Acceptance_Hist", "ML_Final_Accep
 dR_Final_Acceptance_Hist = ROOT.TH1F("dR_Final_Acceptance_Hist", "dR_Final_Acceptance_Hist", Nbins, 0.5, Nbins + 0.5)
 
 for Idx, Input in enumerate(InputList):
-    Mass = Input
     FileName = "tree_ML_MCRun2_"
     if isinstance(Input, str):
         FileName = FileName + Input  + ".root"
-        Mass = 0
     else:
         FileName = FileName + str(Input) + "GeV.root"
 
@@ -180,7 +184,7 @@ for Idx, Input in enumerate(InputList):
     print ("Trig cut")
     RDF = RDF.Filter("evt_trig == 1", "cut_Trig")
     # order: Truth_Eff, ML_Eff, ML_Acc, dR_Eff, dR_Acc
-    EffAccTuple = evaluate_rdf(RDF, RDF, "cut_Trig", Mass)
+    EffAccTuple = evaluate_rdf(RDF, RDF, "cut_Trig")
     Truth_Eff_Trig_Hist.SetBinContent(Idx + 1, EffAccTuple[0])
     ML_Eff_Trig_Hist.SetBinContent(Idx + 1, EffAccTuple[1])
     ML_Acc_Trig_Hist.SetBinContent(Idx + 1, EffAccTuple[2])
@@ -191,16 +195,16 @@ for Idx, Input in enumerate(InputList):
     if cut_ML:
         RDF = RDF.Filter("SigBG_ML > " + SigBG_ML_Threshold, "cut_ML")
         print ("ML cut")
-        EffAccTuple = evaluate_rdf(RDF, RDF, "cut_ML", Mass)
-        if Mass == 0:
+        EffAccTuple = evaluate_rdf(RDF, RDF, "cut_ML")
+        if cut_Alpha:
             RDF_AlphaLow = RDF.Filter(AlphaCutLow, "cut_AlphaLow")
-            EffAccTemp = evaluate_rdf(RDF_AlphaLow, RDF_AlphaLow, "cut_AlphaLow", Mass)
+            EffAccTemp = evaluate_rdf(RDF_AlphaLow, RDF_AlphaLow, "cut_AlphaLow")
 
             RDF_AlphaMed = RDF.Filter(AlphaCutMed, "cut_AlphaMed")
-            EffAccTemp = evaluate_rdf(RDF_AlphaMed, RDF_AlphaMed, "cut_AlphaMed", Mass)
+            EffAccTemp = evaluate_rdf(RDF_AlphaMed, RDF_AlphaMed, "cut_AlphaMed")
 
             RDF_AlphaHigh = RDF.Filter(AlphaCutHigh, "cut_AlphaHigh")
-            EffAccTemp = evaluate_rdf(RDF_AlphaHigh, RDF_AlphaHigh, "cut_AlphaHigh", Mass)
+            EffAccTemp = evaluate_rdf(RDF_AlphaHigh, RDF_AlphaHigh, "cut_AlphaHigh")
 
     RDF = RDF.Define("P1JetsVec", "to_vec(P1high_j1, P1high_j2, P1low_j1, P1low_j2)")
     RDF = RDF.Define("P2JetsVec", "to_vec(P2high_j1, P2high_j2, P2low_j1, P2low_j2)")
@@ -227,7 +231,7 @@ for Idx, Input in enumerate(InputList):
         ML_pair_RDF = ML_pair_RDF.Filter("ML_pair_dR1 < 2 && ML_pair_dR2 < 2", "ML_pair_cut_dR")
         dR_pair_RDF = dR_pair_RDF.Filter("dR_pair_dR1 < 2 && dR_pair_dR2 < 2", "dR_pair_cut_dR")
         print ("dR cut")
-        EffAccTuple = evaluate_rdf(ML_pair_RDF, dR_pair_RDF, "cut_dR", Mass)
+        EffAccTuple = evaluate_rdf(ML_pair_RDF, dR_pair_RDF, "cut_dR")
 
     # dEta cut
     if cut_dEta:
@@ -236,7 +240,7 @@ for Idx, Input in enumerate(InputList):
         dR_pair_RDF = dR_pair_RDF.Filter("abs(dR_pair_Phigh_lvec.Eta() - dR_pair_Plow_lvec.Eta()) < 1.1",
                                         "dR_pair_cut_dEta")
         print ("dEta cut")
-        EffAccTuple = evaluate_rdf(ML_pair_RDF, dR_pair_RDF, "cut_dEta", Mass)
+        EffAccTuple = evaluate_rdf(ML_pair_RDF, dR_pair_RDF, "cut_dEta")
 
     # Masym cut
     if cut_Masym:
@@ -245,7 +249,7 @@ for Idx, Input in enumerate(InputList):
         dR_pair_RDF = dR_pair_RDF.Filter("abs(dR_pair_Phigh_lvec.M() - dR_pair_Plow_lvec.M()) /" + 
                         "(dR_pair_Phigh_lvec.M() + dR_pair_Plow_lvec.M()) < 0.1", "dR_pair_cut_Masym")
         print ("Masym cut")
-        EffAccTuple = evaluate_rdf(ML_pair_RDF, dR_pair_RDF, "cut_Masym", Mass)
+        EffAccTuple = evaluate_rdf(ML_pair_RDF, dR_pair_RDF, "cut_Masym")
 
     # order: Truth_Eff, ML_Eff, ML_Acc, dR_Eff, dR_Acc
     Truth_Eff_Final_Hist.SetBinContent(Idx + 1, EffAccTuple[0])

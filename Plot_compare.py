@@ -4,34 +4,39 @@
 import ROOT as rt
 
 BaseName = "trigger"
-BaseFileList = ["Hists_all_cuts.root"]
-BaseHistList = ["ML_Eff_Trig_Hist"]
+BaseFileList = ["results/plots_Diquark_CNN_more_all_cuts/Hists.root"]
+#BaseHistList = ["ML_Eff_Trig_Hist"]
+BaseHistList = ["ML_Acc_Trig_Hist"]
 #BaseHistList = ["ML_Trig_Acceptance_Hist"]
 
 Comp1Name = "trigger + dR + dEta + massAsymm"
-Comp1FileList = ["Hists_all_cuts.root"]
-Comp1HistList = ["ML_Eff_Final_Hist"]
+Comp1FileList = ["results/plots_Diquark_CNN_more_all_cuts/Hists.root"]
+#Comp1HistList = ["ML_Eff_Final_Hist"]
+Comp1HistList = ["ML_Acc_Final_Hist"]
 #Comp1HistList = ["ML_Final_Acceptance_Hist"]
 
 Comp2Name = "trigger + ML medium"
-Comp2FileList = ["Hists_ML_cut.root"]
-Comp2HistList = ["ML_Eff_Final_Hist"]
+Comp2FileList = ["results/plots_Diquark_CNN_more_ML_cut/Hists.root"]
+#Comp2HistList = ["ML_Eff_Final_Hist"]
+Comp2HistList = ["ML_Acc_Final_Hist"]
 #Comp2HistList = ["ML_Final_Acceptance_Hist"]
 
 ShapeComp = False
 SetLogY = False
 
-YTitle = "Pairing Efficiency"
+#YTitle = "Pairing Efficiency"
+YTitle = "Pairing Accuracy"
 #YTitle = "Cut Acceptance"
 XTitle = "Gen Mass [GeV]"
 
-InputList = [500, 600, 700, 800, 900, 1000, 1250, 1500, 1750, 2000, 2500, 3000]
+#InputList = [500, 600, 700, 800, 900, 1000, 1250, 1500, 1750, 2000, 2500, 3000]
+InputList = [500, 1000, 1600, 2000, 2250, 3000]
 
 XMin = 0
 XMax = 0
 YScale = 1.5
 
-FileDir = "results_temp/"
+FileDir = ""
 HistDir = ""
 
 if ShapeComp: YTitle = "A.U."
@@ -59,6 +64,7 @@ for i in range(len(BaseFileList)):
         rt.gStyle.SetOptStat(rt.kFALSE)
 
         MyLeg = rt.TLegend(0.3,0.65,0.9,0.9)
+        MyLeg.SetTextSize(0.05)
 
         PadUp = rt.TPad("PadUp", "PadUp", 0, 0.3, 1, 1.0)
         PadUp.SetBottomMargin(0.01)
@@ -70,13 +76,13 @@ for i in range(len(BaseFileList)):
         PadDown.SetGrid()
         PadDown.Draw()
 
-        OutName = BaseFileList[i].replace(".root", "_")
+        OutName = ""
         BaseHist = None
 
         for k in range(len(StructList)):
             iFileName = StructList[k].FileList[i]
             iHistName = StructList[k].HistList[j]
-            OutName = OutName + iHistName.replace("_h", "_")
+            OutName = OutName + iHistName.replace("_Hist", "_")
             iFile = rt.TFile.Open(FileDir + iFileName)
             iHist = iFile.Get(HistDir + iHistName)
             print k, iHist
@@ -93,6 +99,9 @@ for i in range(len(BaseFileList)):
                 BaseHist = iHist.Clone()
 
                 BaseHist.GetYaxis().SetTitle(YTitle)
+                BaseHist.GetYaxis().SetTitleOffset(0.8)
+                BaseHist.GetYaxis().SetTitleSize(0.05)
+                #BaseHist.GetYaxis().SetLabelSize(0.08)
                 BaseHist.SetMaximum(YMaxTemp)
                 BaseHist.SetMinimum(0)
                 BaseHist.SetTitle("")
@@ -112,9 +121,9 @@ for i in range(len(BaseFileList)):
                 BaseFrame.GetYaxis().SetRangeUser(0, 2)
 
                 BaseFrame.GetXaxis().SetTitle(XTitle)
-                BaseFrame.GetXaxis().SetTitleOffset(0.8)
+                BaseFrame.GetXaxis().SetTitleOffset(1.0)
                 BaseFrame.GetXaxis().SetTitleSize(0.1)
-                BaseFrame.GetXaxis().SetLabelSize(0.08)
+                BaseFrame.GetXaxis().SetLabelSize(0.12)
                 if len(InputList) > 0:
                     for Bin, Lable in enumerate(InputList):
                         BaseFrame.GetXaxis().SetBinLabel(Bin+1, str(Lable))

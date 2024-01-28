@@ -4,7 +4,8 @@ ROOT.gInterpreter.Declare('#include "Add_to_TTree.h"')
 
 #InputList = [500]
 #InputList = [500, 600, 700, 800, 900, 1000, 1250, 1500, 1750, 2000, 2500, 3000]
-InputList = ["QCD_2M_stride30"]
+#InputList = ["QCD_2M_stride30"]
+InputList = ["Ms2000_Mc500", "Ms4000_Mc1000", "Ms6000_Mc1600", "Ms8000_Mc2000", "Ms9000_Mc2250", "Ms8000_Mc3000"]
 
 InputDir = "/eos/uscms/store/user/huiwang/Dijet/ML_TTree/"
 OutputDir = "ML_TTree/"
@@ -45,6 +46,13 @@ SaveList = ["Mass", "weight", "evt_trig",
         "P3high_rho", "P3low_rho",
 ]
 
+def mass_in_str (String):
+    Mass = "0"
+    if "Mc" in String:
+        Mass = String.split("Mc")[1]
+        Mass = Mass.split(".")[0]
+    return Mass
+
 for Input in InputList:
     FileName = "tree_ML_MCRun2_"
     if isinstance(Input, str):
@@ -56,7 +64,8 @@ for Input in InputList:
     RDF = ROOT.RDataFrame("tree_ML", InputDir + FileName)
 
     if isinstance(Input, str):
-        RDF = RDF.Define("Mass", str(0))
+        Mass = mass_in_str(Input)
+        RDF = RDF.Define("Mass", Mass)
     else:
         RDF = RDF.Define("Mass", str(Input))
         RDF = RDF.Define("weight", str(1))
