@@ -4,33 +4,36 @@
 import ROOT as rt
 
 BaseName = "trigger"
-BaseFileList = ["results/plots_Diquark_CNN_more_all_cuts/Hists.root"]
-#BaseHistList = ["ML_Eff_Trig_Hist"]
-BaseHistList = ["ML_Acc_Trig_Hist"]
+BaseFileList = ["results/plots_ResAndNonres_CNN_more_all_cuts/Hists.root"]
+#BaseFileList = ["results/plots_Diquark_ResAndNonres_CNN_more_all_cuts/Hists.root"]
+BaseHistList = ["ML_Eff_Trig_Hist"]
+#BaseHistList = ["ML_Acc_Trig_Hist"]
 #BaseHistList = ["ML_Trig_Acceptance_Hist"]
 
 Comp1Name = "trigger + dR + dEta + massAsymm"
-Comp1FileList = ["results/plots_Diquark_CNN_more_all_cuts/Hists.root"]
-#Comp1HistList = ["ML_Eff_Final_Hist"]
-Comp1HistList = ["ML_Acc_Final_Hist"]
+Comp1FileList = ["results/plots_ResAndNonres_CNN_more_all_cuts/Hists.root"]
+#Comp1FileList = ["results/plots_Diquark_ResAndNonres_CNN_more_all_cuts/Hists.root"]
+Comp1HistList = ["ML_Eff_Final_Hist"]
+#Comp1HistList = ["ML_Acc_Final_Hist"]
 #Comp1HistList = ["ML_Final_Acceptance_Hist"]
 
 Comp2Name = "trigger + ML medium"
-Comp2FileList = ["results/plots_Diquark_CNN_more_ML_cut/Hists.root"]
-#Comp2HistList = ["ML_Eff_Final_Hist"]
-Comp2HistList = ["ML_Acc_Final_Hist"]
+Comp2FileList = ["results/plots_ResAndNonres_CNN_more_ML_cut/Hists.root"]
+#Comp2FileList = ["results/plots_Diquark_ResAndNonres_CNN_more_ML_cut/Hists.root"]
+Comp2HistList = ["ML_Eff_Final_Hist"]
+#Comp2HistList = ["ML_Acc_Final_Hist"]
 #Comp2HistList = ["ML_Final_Acceptance_Hist"]
 
 ShapeComp = False
 SetLogY = False
 
-#YTitle = "Pairing Efficiency"
-YTitle = "Pairing Accuracy"
+YTitle = "Pairing Efficiency"
+#YTitle = "Pairing Accuracy"
 #YTitle = "Cut Acceptance"
 XTitle = "Gen Mass [GeV]"
 
-#InputList = [500, 600, 700, 800, 900, 1000, 1250, 1500, 1750, 2000, 2500, 3000]
-InputList = [500, 1000, 1600, 2000, 2250, 3000]
+InputList = [500, 600, 700, 800, 900, 1000, 1250, 1500, 1750, 2000, 2500, 3000]
+#InputList = [500, 1000, 1600, 2000, 2250, 3000]
 
 XMin = 0
 XMax = 0

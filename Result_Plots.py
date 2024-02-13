@@ -105,7 +105,9 @@ def get_first_last_acceptance (RDF):
 
 ################### config #######################
 
-SigBG_ML_Thresholds = [0.9426, 0.8016, 0.6509]       #cut values for tight(0.01), medium(0.05), and loose(0.1)
+#cut values for tight(0.01), medium(0.05), and loose(0.1)
+#SigBG_ML_Thresholds = [0.9426, 0.8016, 0.6509]       #trained with QCD and resonant signals
+SigBG_ML_Thresholds = [0.9497, 0.8174, 0.6807]       #trained with QCD and resonant and nonresonant signals
 SigBG_ML_Threshold = str(SigBG_ML_Thresholds[1])
 
 AlphaBins = [0.15, 0.25, 0.35, 0.5]
@@ -114,17 +116,17 @@ AlphaCutMed = "ML_pair_Alpha > " + str(AlphaBins[1]) + " && ML_pair_Alpha < " + 
 AlphaCutHigh = "ML_pair_Alpha > " + str(AlphaBins[2]) + " && ML_pair_Alpha < " + str(AlphaBins[3])
 
 #InputList = [500]
-#InputList = [500, 600, 700, 800, 900, 1000, 1250, 1500, 1750, 2000, 2500, 3000]
+InputList = [500, 600, 700, 800, 900, 1000, 1250, 1500, 1750, 2000, 2500, 3000]
 #InputList = ["QCD_2M_stride30"]
-InputList = ["Ms2000_Mc500", "Ms4000_Mc1000", "Ms6000_Mc1600", "Ms8000_Mc2000", "Ms9000_Mc2250", "Ms8000_Mc3000"]
+#InputList = ["Ms2000_Mc500", "Ms4000_Mc1000", "Ms6000_Mc1600", "Ms8000_Mc2000", "Ms9000_Mc2250", "Ms8000_Mc3000"]
 
 #cut flow
-cut_ML = False
+cut_ML = True
 cut_Alpha = False
 
-cut_dR = True
-cut_dEta = True
-cut_Masym = True
+cut_dR = False
+cut_dEta = False
+cut_Masym = False
 
 Nbins = len(InputList)
 InputDir = "ML_TTree/"
