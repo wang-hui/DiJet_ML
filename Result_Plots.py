@@ -37,9 +37,45 @@ def get_acc_eff (RDF, TarName, TarHist, RefHist):
     print("TruthEff %.2f" %RefHistEff, TarName + " Eff %.2f" % TarHistEff, TarName + " Acc %.2f" % TarHistAcc)
     return RefHistEff, TarHistEff, TarHistAcc
 
+def plot_hist2D (Hist2D, Pairing, Name, Mass):
+    MyCanvas = ROOT.TCanvas("MyCanvas", "MyCanvas", 600, 600)
+    MyCanvas.SetLeftMargin(0.15)
+    MyCanvas.SetRightMargin(0.15)
+    MyCanvas.SetLogz()
+
+    Hist2D.Draw("colz")
+    Title = Hist2D.GetTitle()
+    Hist2D.SetTitle("Gen mass " + str(Mass) + "GeV " + Name)
+
+    xTitle = Title.replace("Alpha","")
+    Hist2D.GetXaxis().SetTitle(xTitle + " [GeV]")
+    Hist2D.GetYaxis().SetTitle("#alpha = M2j / M4j")
+
+    Func1 = ROOT.TF1("Func1", "3.0/x", 0, 10)
+    Func2 = ROOT.TF1("Func2", "3.5/x", 0, 10)
+    Func1.Draw("same")
+    Func2.Draw("same")
+
+    MyCanvas.SaveAs("results_temp/" + Title + "_" + Pairing + "_" + Name + "_" + str(Mass) + "GeV.png")
+
+def make_alpha_plots (ML_pair_RDF, dR_pair_RDF, Name, Mass):
+    AlphaM4jMod = ROOT.RDF.TH2DModel("AlphaM4j", "AlphaM4j", 50, 0, 10, 20, 0, 0.6)
+    AlphaM2jMod = ROOT.RDF.TH2DModel("AlphaM2j", "AlphaM2j", 50, 0, 5, 20, 0, 0.6)
+    ML_pair_AlphaM4j = ML_pair_RDF.Histo2D(AlphaM4jMod, "fourjetmasstev", "ML_pair_Alpha")
+    ML_pair_AlphaM2j = ML_pair_RDF.Histo2D(AlphaM2jMod, "ML_pair_MTeV", "ML_pair_Alpha")
+    dR_pair_AlphaM4j = dR_pair_RDF.Histo2D(AlphaM4jMod, "fourjetmasstev", "dR_pair_Alpha")
+    dR_pair_AlphaM2j = dR_pair_RDF.Histo2D(AlphaM2jMod, "dR_pair_MTeV", "dR_pair_Alpha")
+
+    plot_hist2D(ML_pair_AlphaM4j, "ML_pair", Name, Mass)
+    plot_hist2D(ML_pair_AlphaM2j, "ML_pair", Name, Mass)
+    plot_hist2D(dR_pair_AlphaM4j, "dR_pair", Name, Mass)
+    plot_hist2D(dR_pair_AlphaM2j, "dR_pair", Name, Mass)
+
 def evaluate_rdf (ML_pair_RDF, dR_pair_RDF, Name):
     NpCol = ML_pair_RDF.AsNumpy(["Mass"])
     Mass = NpCol["Mass"][0]
+
+    make_alpha_plots (ML_pair_RDF, dR_pair_RDF, Name, Mass)
 
     Truth_Eff = ML_Eff = ML_Acc = dR_Eff = dR_Acc = 0
     Xlow = 0
@@ -56,6 +92,11 @@ def evaluate_rdf (ML_pair_RDF, dR_pair_RDF, Name):
                     "ML_pair_val", "weight")
     dR_pair_M = dR_pair_RDF.Histo1D(ROOT.RDF.TH1DModel("dR_pair_M", "dR_pair_M", 100, Xlow, Xhigh),
                     "dR_pair_M", "weight")
+
+    for i in range(100):
+        x = ML_pair_M.GetBinCenter(i)
+        if x > 2900:
+            print(x, ML_pair_M.GetBinContent(i))
 
     MyCanvas = ROOT.TCanvas("MyCanvas", "MyCanvas", 600, 600)
     MyCanvas.SetLeftMargin(0.15)
@@ -115,9 +156,10 @@ AlphaCutLow = "ML_pair_Alpha > " + str(AlphaBins[0]) + " && ML_pair_Alpha < " + 
 AlphaCutMed = "ML_pair_Alpha > " + str(AlphaBins[1]) + " && ML_pair_Alpha < " + str(AlphaBins[2])
 AlphaCutHigh = "ML_pair_Alpha > " + str(AlphaBins[2]) + " && ML_pair_Alpha < " + str(AlphaBins[3])
 
-#InputList = [500]
-InputList = [500, 600, 700, 800, 900, 1000, 1250, 1500, 1750, 2000, 2500, 3000]
+#InputList = [2000]
+InputList = ["Ms8000_Mc2000"]
 #InputList = ["QCD_2M_stride30"]
+#InputList = [500, 600, 700, 800, 900, 1000, 1250, 1500, 1750, 2000, 2500, 3000]
 #InputList = ["Ms2000_Mc500", "Ms4000_Mc1000", "Ms6000_Mc1600", "Ms8000_Mc2000", "Ms9000_Mc2250", "Ms8000_Mc3000"]
 
 #cut flow
@@ -181,7 +223,10 @@ for Idx, Input in enumerate(InputList):
     RDF = RDF.Define("dR_pair_M", "col_index<float>(P1_M, P2_M, P3_M, dR_pair)")
     RDF = RDF.Define("ML_pair_M", "col_index<float>(P1_M, P2_M, P3_M, ML_pair)")
 
-    RDF = RDF.Define("ML_pair_Alpha", "ML_pair_M / fourjetmasstev / 1000")
+    RDF = RDF.Define("dR_pair_MTeV", "dR_pair_M / 1000")
+    RDF = RDF.Define("ML_pair_MTeV", "ML_pair_M / 1000")
+    RDF = RDF.Define("dR_pair_Alpha", "dR_pair_MTeV / fourjetmasstev")
+    RDF = RDF.Define("ML_pair_Alpha", "ML_pair_MTeV / fourjetmasstev")
 
     print ("Trig cut")
     RDF = RDF.Filter("evt_trig == 1", "cut_Trig")
