@@ -51,20 +51,25 @@ def plot_hist2D (Hist2D, Pairing, Name, Mass):
     Hist2D.GetXaxis().SetTitle(xTitle + " [GeV]")
     Hist2D.GetYaxis().SetTitle("#alpha = M2j / M4j")
 
-    Func1 = ROOT.TF1("Func1", "3.0/x", 0, 10)
-    Func2 = ROOT.TF1("Func2", "3.5/x", 0, 10)
-    Func1.Draw("same")
-    Func2.Draw("same")
+    ## TH2D Z axis default min is 1; set to 1E-4 for QCD with weights
+    Zmin = 1
+    if Mass == 0: Zmin = 1E-4
+    Hist2D.SetMinimum(Zmin)
+
+    #Func1 = ROOT.TF1("Func1", "3.0/x", 0, 10)
+    #Func2 = ROOT.TF1("Func2", "3.5/x", 0, 10)
+    #Func1.Draw("same")
+    #Func2.Draw("same")
 
     MyCanvas.SaveAs("results_temp/" + Title + "_" + Pairing + "_" + Name + "_" + str(Mass) + "GeV.png")
 
 def make_alpha_plots (ML_pair_RDF, dR_pair_RDF, Name, Mass):
-    AlphaM4jMod = ROOT.RDF.TH2DModel("AlphaM4j", "AlphaM4j", 50, 0, 10, 20, 0, 0.6)
-    AlphaM2jMod = ROOT.RDF.TH2DModel("AlphaM2j", "AlphaM2j", 50, 0, 5, 20, 0, 0.6)
-    ML_pair_AlphaM4j = ML_pair_RDF.Histo2D(AlphaM4jMod, "fourjetmasstev", "ML_pair_Alpha")
-    ML_pair_AlphaM2j = ML_pair_RDF.Histo2D(AlphaM2jMod, "ML_pair_MTeV", "ML_pair_Alpha")
-    dR_pair_AlphaM4j = dR_pair_RDF.Histo2D(AlphaM4jMod, "fourjetmasstev", "dR_pair_Alpha")
-    dR_pair_AlphaM2j = dR_pair_RDF.Histo2D(AlphaM2jMod, "dR_pair_MTeV", "dR_pair_Alpha")
+    AlphaM4jMod = ROOT.RDF.TH2DModel("AlphaM4j", "AlphaM4j", 40, 0, 10, 30, 0, 0.6)
+    AlphaM2jMod = ROOT.RDF.TH2DModel("AlphaM2j", "AlphaM2j", 40, 0, 4, 30, 0, 0.6)
+    ML_pair_AlphaM4j = ML_pair_RDF.Histo2D(AlphaM4jMod, "fourjetmasstev", "ML_pair_Alpha", "weight")
+    ML_pair_AlphaM2j = ML_pair_RDF.Histo2D(AlphaM2jMod, "ML_pair_MTeV", "ML_pair_Alpha", "weight")
+    dR_pair_AlphaM4j = dR_pair_RDF.Histo2D(AlphaM4jMod, "fourjetmasstev", "dR_pair_Alpha", "weight")
+    dR_pair_AlphaM2j = dR_pair_RDF.Histo2D(AlphaM2jMod, "dR_pair_MTeV", "dR_pair_Alpha", "weight")
 
     plot_hist2D(ML_pair_AlphaM4j, "ML_pair", Name, Mass)
     plot_hist2D(ML_pair_AlphaM2j, "ML_pair", Name, Mass)
@@ -92,11 +97,6 @@ def evaluate_rdf (ML_pair_RDF, dR_pair_RDF, Name):
                     "ML_pair_val", "weight")
     dR_pair_M = dR_pair_RDF.Histo1D(ROOT.RDF.TH1DModel("dR_pair_M", "dR_pair_M", 100, Xlow, Xhigh),
                     "dR_pair_M", "weight")
-
-    for i in range(100):
-        x = ML_pair_M.GetBinCenter(i)
-        if x > 2900:
-            print(x, ML_pair_M.GetBinContent(i))
 
     MyCanvas = ROOT.TCanvas("MyCanvas", "MyCanvas", 600, 600)
     MyCanvas.SetLeftMargin(0.15)
@@ -156,8 +156,8 @@ AlphaCutLow = "ML_pair_Alpha > " + str(AlphaBins[0]) + " && ML_pair_Alpha < " + 
 AlphaCutMed = "ML_pair_Alpha > " + str(AlphaBins[1]) + " && ML_pair_Alpha < " + str(AlphaBins[2])
 AlphaCutHigh = "ML_pair_Alpha > " + str(AlphaBins[2]) + " && ML_pair_Alpha < " + str(AlphaBins[3])
 
-#InputList = [2000]
-InputList = ["Ms8000_Mc2000"]
+InputList = [2000]
+#InputList = ["Ms8000_Mc2000"]
 #InputList = ["QCD_2M_stride30"]
 #InputList = [500, 600, 700, 800, 900, 1000, 1250, 1500, 1750, 2000, 2500, 3000]
 #InputList = ["Ms2000_Mc500", "Ms4000_Mc1000", "Ms6000_Mc1600", "Ms8000_Mc2000", "Ms9000_Mc2250", "Ms8000_Mc3000"]
@@ -166,6 +166,7 @@ InputList = ["Ms8000_Mc2000"]
 cut_ML = True
 cut_Alpha = False
 
+cut_M4j = False
 cut_dR = False
 cut_dEta = False
 cut_Masym = False
@@ -188,6 +189,13 @@ dR_Eff_Final_Hist = ROOT.TH1F("dR_Eff_Final_Hist", "dR_Eff_Final_Hist", Nbins, 0
 dR_Acc_Final_Hist = ROOT.TH1F("dR_Acc_Final_Hist", "dR_Acc_Final_Hist", Nbins, 0.5, Nbins + 0.5)
 ML_Final_Acceptance_Hist = ROOT.TH1F("ML_Final_Acceptance_Hist", "ML_Final_Acceptance_Hist", Nbins, 0.5, Nbins + 0.5)
 dR_Final_Acceptance_Hist = ROOT.TH1F("dR_Final_Acceptance_Hist", "dR_Final_Acceptance_Hist", Nbins, 0.5, Nbins + 0.5)
+
+ML_M2j_Trig_Hist = None
+dR_M2j_Trig_Hist = None
+M4j_Trig_Hist = None
+ML_M2j_Final_Hist = None
+dR_M2j_Final_Hist = None
+M4j_Final_Hist = None
 
 for Idx, Input in enumerate(InputList):
     FileName = "tree_ML_MCRun2_"
@@ -229,7 +237,12 @@ for Idx, Input in enumerate(InputList):
     RDF = RDF.Define("ML_pair_Alpha", "ML_pair_MTeV / fourjetmasstev")
 
     print ("Trig cut")
-    RDF = RDF.Filter("evt_trig == 1", "cut_Trig")
+    TrigCut = "evt_trig == 1"
+    if cut_M4j:
+        ## M4j > 1.607 TeV for HT trigger turn-on
+        TrigCut = "evt_trig == 1 && fourjetmasstev > 1.607"
+
+    RDF = RDF.Filter(TrigCut, "cut_Trig")
     # order: Truth_Eff, ML_Eff, ML_Acc, dR_Eff, dR_Acc
     EffAccTuple = evaluate_rdf(RDF, RDF, "cut_Trig")
     Truth_Eff_Trig_Hist.SetBinContent(Idx + 1, EffAccTuple[0])
@@ -237,6 +250,13 @@ for Idx, Input in enumerate(InputList):
     ML_Acc_Trig_Hist.SetBinContent(Idx + 1, EffAccTuple[2])
     dR_Eff_Trig_Hist.SetBinContent(Idx + 1, EffAccTuple[3])
     dR_Acc_Trig_Hist.SetBinContent(Idx + 1, EffAccTuple[4])
+
+    ML_M2j_Trig_Hist = RDF.Histo1D(ROOT.RDF.TH1DModel("ML_M2j_Trig_Hist", "ML_M2j_Trig_Hist", 40, 0, 4),
+                    "ML_pair_MTeV", "weight")
+    dR_M2j_Trig_Hist = RDF.Histo1D(ROOT.RDF.TH1DModel("dR_M2j_Trig_Hist", "dR_M2j_Trig_Hist", 40, 0, 4),
+                    "dR_pair_MTeV", "weight")
+    M4j_Trig_Hist = RDF.Histo1D(ROOT.RDF.TH1DModel("M4j_Trig_Hist", "M4j_Trig_Hist", 40, 0, 4),
+                    "fourjetmasstev", "weight")
 
     # ML cut
     if cut_ML:
@@ -305,6 +325,13 @@ for Idx, Input in enumerate(InputList):
     dR_Eff_Final_Hist.SetBinContent(Idx + 1, EffAccTuple[3])
     dR_Acc_Final_Hist.SetBinContent(Idx + 1, EffAccTuple[4])
 
+    ML_M2j_Final_Hist = RDF.Histo1D(ROOT.RDF.TH1DModel("ML_M2j_Final_Hist", "ML_M2j_Final_Hist", 40, 0, 4),
+                    "ML_pair_MTeV", "weight")
+    dR_M2j_Final_Hist = RDF.Histo1D(ROOT.RDF.TH1DModel("dR_M2j_Final_Hist", "dR_M2j_Final_Hist", 40, 0, 4),
+                    "dR_pair_MTeV", "weight")
+    M4j_Final_Hist = RDF.Histo1D(ROOT.RDF.TH1DModel("M4j_Final_Hist", "M4j_Final_Hist", 40, 0, 4),
+                    "fourjetmasstev", "weight")
+
     print("ML pair acceptance")
     ML_Trig_Acceptance, ML_Final_Acceptance = get_first_last_acceptance(ML_pair_RDF)
     ML_Trig_Acceptance_Hist.SetBinContent(Idx + 1, ML_Trig_Acceptance)
@@ -338,3 +365,13 @@ if Nbins > 1:
     dR_Acc_Final_Hist.Write()
     ML_Final_Acceptance_Hist.Write()
     dR_Final_Acceptance_Hist.Write()
+
+else:
+    Input = str(InputList[0])
+    Hists = ROOT.TFile("results_temp/" + Input + "_Hists.root", "recreate")
+    ML_M2j_Trig_Hist.Write()
+    dR_M2j_Trig_Hist.Write()
+    M4j_Trig_Hist.Write()
+    ML_M2j_Final_Hist.Write()
+    dR_M2j_Final_Hist.Write()
+M4j_Final_Hist = None
